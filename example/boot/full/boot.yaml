@@ -1,0 +1,10 @@
+---
+echo:
+  - name: greeter
+    port: 8080
+    enabled: true
+    description: "This is golang server with echo framework started from rk-boot"
+    commonService:
+      enabled: true
+    sw:
+      enabled: true

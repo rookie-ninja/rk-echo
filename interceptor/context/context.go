@@ -1,0 +1,212 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
+// Package rkechoctx defines utility functions and variables used by Echo middleware
+
+package rkechoctx
+
+import (
+	"github.com/labstack/echo/v4"
+	"github.com/rookie-ninja/rk-echo/interceptor"
+	"github.com/rookie-ninja/rk-logger"
+	"github.com/rookie-ninja/rk-query"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
+	"net/http"
+)
+
+const (
+	// RequestIdKey is the header key sent to client
+	RequestIdKey = "X-Request-Id"
+	// TraceIdKey is the header sent to client
+	TraceIdKey = "X-Trace-Id"
+)
+
+var (
+	noopTracerProvider = trace.NewNoopTracerProvider()
+	noopEvent          = rkquery.NewEventFactory().CreateEventNoop()
+)
+
+// GetIncomingHeaders extract call-scoped incoming headers
+func GetIncomingHeaders(ctx echo.Context) http.Header {
+	return ctx.Request().Header
+}
+
+// AddHeaderToClient headers that would be sent to client.
+// Values would be merged.
+func AddHeaderToClient(ctx echo.Context, key, value string) {
+	if ctx == nil || ctx.Response().Writer == nil {
+		return
+	}
+
+	header := ctx.Response().Writer.Header()
+	header.Add(key, value)
+}
+
+// SetHeaderToClient headers that would be sent to client.
+// Values would be overridden.
+func SetHeaderToClient(ctx echo.Context, key, value string) {
+	if ctx == nil || ctx.Response().Writer == nil {
+		return
+	}
+	header := ctx.Response().Writer.Header()
+	header.Set(key, value)
+}
+
+// GetEvent extract takes the call-scoped EventData from middleware.
+func GetEvent(ctx echo.Context) rkquery.Event {
+	if ctx == nil {
+		return noopEvent
+	}
+
+	if raw := ctx.Get(rkechointer.RpcEventKey); raw != nil {
+		return raw.(rkquery.Event)
+	}
+
+	return noopEvent
+}
+
+// GetLogger extract takes the call-scoped zap logger from middleware.
+func GetLogger(ctx echo.Context) *zap.Logger {
+	if ctx == nil {
+		return rklogger.NoopLogger
+	}
+
+	if raw := ctx.Get(rkechointer.RpcLoggerKey); raw != nil {
+		requestId := GetRequestId(ctx)
+		traceId := GetTraceId(ctx)
+		fields := make([]zap.Field, 0)
+		if len(requestId) > 0 {
+			fields = append(fields, zap.String("requestId", requestId))
+		}
+		if len(traceId) > 0 {
+			fields = append(fields, zap.String("traceId", traceId))
+		}
+
+		return raw.(*zap.Logger).With(fields...)
+	}
+
+	return rklogger.NoopLogger
+}
+
+// GetRequestId extract request id from context.
+// If user enabled meta interceptor, then a random request Id would e assigned and set to context as value.
+// If user called AddHeaderToClient() with key of RequestIdKey, then a new request id would be updated.
+func GetRequestId(ctx echo.Context) string {
+	if ctx == nil || ctx.Response().Writer == nil {
+		return ""
+	}
+
+	return ctx.Response().Writer.Header().Get(RequestIdKey)
+}
+
+// GetTraceId extract trace id from context.
+func GetTraceId(ctx echo.Context) string {
+	if ctx == nil || ctx.Response().Writer == nil {
+		return ""
+	}
+
+	return ctx.Response().Writer.Header().Get(TraceIdKey)
+}
+
+// GetEntryName extract entry name from context.
+func GetEntryName(ctx echo.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if raw := ctx.Get(rkechointer.RpcEntryNameKey); raw != nil {
+		return raw.(string)
+	}
+
+	return ""
+}
+
+// GetTraceSpan extract the call-scoped span from context.
+func GetTraceSpan(ctx echo.Context) trace.Span {
+	_, span := noopTracerProvider.Tracer("rk-trace-noop").Start(ctx.Request().Context(), "noop-span")
+
+	if ctx == nil {
+		return span
+	}
+
+	if raw := ctx.Get(rkechointer.RpcSpanKey); raw != nil {
+		return raw.(trace.Span)
+	}
+
+	return span
+}
+
+// GetTracer extract the call-scoped tracer from context.
+func GetTracer(ctx echo.Context) trace.Tracer {
+	if ctx == nil {
+		return noopTracerProvider.Tracer("rk-trace-noop")
+	}
+
+	if raw := ctx.Get(rkechointer.RpcTracerKey); raw != nil {
+		return raw.(trace.Tracer)
+	}
+
+	return noopTracerProvider.Tracer("rk-trace-noop")
+}
+
+// GetTracerProvider extract the call-scoped tracer provider from context.
+func GetTracerProvider(ctx echo.Context) trace.TracerProvider {
+	if ctx == nil {
+		return noopTracerProvider
+	}
+
+	if raw := ctx.Get(rkechointer.RpcTracerProviderKey); raw != nil {
+		return raw.(trace.TracerProvider)
+	}
+
+	return noopTracerProvider
+}
+
+// GetTracerPropagator extract takes the call-scoped propagator from middleware.
+func GetTracerPropagator(ctx echo.Context) propagation.TextMapPropagator {
+	if ctx == nil {
+		return nil
+	}
+
+	if raw := ctx.Get(rkechointer.RpcPropagatorKey); raw != nil {
+		return raw.(propagation.TextMapPropagator)
+	}
+
+	return nil
+}
+
+// InjectSpanToHttpRequest inject span to http request
+func InjectSpanToHttpRequest(ctx echo.Context, req *http.Request) {
+	if req == nil {
+		return
+	}
+
+	newCtx := trace.ContextWithRemoteSpanContext(req.Context(), GetTraceSpan(ctx).SpanContext())
+	GetTracerPropagator(ctx).Inject(newCtx, propagation.HeaderCarrier(req.Header))
+}
+
+// NewTraceSpan start a new span
+func NewTraceSpan(ctx echo.Context, name string) trace.Span {
+	tracer := GetTracer(ctx)
+	newCtx, span := tracer.Start(ctx.Request().Context(), name)
+
+	ctx.SetRequest(ctx.Request().WithContext(newCtx))
+
+	GetEvent(ctx).StartTimer(name)
+
+	return span
+}
+
+// EndTraceSpan end span
+func EndTraceSpan(ctx echo.Context, span trace.Span, success bool) {
+	if success {
+		span.SetStatus(otelcodes.Ok, otelcodes.Ok.String())
+	}
+
+	span.End()
+}
