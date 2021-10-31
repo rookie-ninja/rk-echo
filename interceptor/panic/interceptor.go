@@ -1,3 +1,9 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
+// Package rkechopanic is a middleware of echo framework for recovering from panic
 package rkechopanic
 
 import (
@@ -11,7 +17,7 @@ import (
 	"runtime/debug"
 )
 
-// Interceptor returns a gin.HandlerFunc (middleware)
+// Interceptor returns a echo.MiddlewareFunc (middleware)
 func Interceptor(opts ...Option) echo.MiddlewareFunc {
 	set := newOptionSet(opts...)
 

@@ -8,6 +8,7 @@
 package rkechoctx
 
 import (
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/interceptor"
 	"github.com/rookie-ninja/rk-logger"
@@ -128,11 +129,13 @@ func GetEntryName(ctx echo.Context) string {
 
 // GetTraceSpan extract the call-scoped span from context.
 func GetTraceSpan(ctx echo.Context) trace.Span {
-	_, span := noopTracerProvider.Tracer("rk-trace-noop").Start(ctx.Request().Context(), "noop-span")
+	_, span := noopTracerProvider.Tracer("rk-trace-noop").Start(context.TODO(), "noop-span")
 
-	if ctx == nil {
+	if ctx == nil || ctx.Request() == nil {
 		return span
 	}
+
+	_, span = noopTracerProvider.Tracer("rk-trace-noop").Start(ctx.Request().Context(), "noop-span")
 
 	if raw := ctx.Get(rkechointer.RpcSpanKey); raw != nil {
 		return raw.(trace.Span)
@@ -187,7 +190,10 @@ func InjectSpanToHttpRequest(ctx echo.Context, req *http.Request) {
 	}
 
 	newCtx := trace.ContextWithRemoteSpanContext(req.Context(), GetTraceSpan(ctx).SpanContext())
-	GetTracerPropagator(ctx).Inject(newCtx, propagation.HeaderCarrier(req.Header))
+
+	if propagator := GetTracerPropagator(ctx); propagator != nil {
+		propagator.Inject(newCtx, propagation.HeaderCarrier(req.Header))
+	}
 }
 
 // NewTraceSpan start a new span

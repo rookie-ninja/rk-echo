@@ -418,4 +418,3 @@ func (entry *SwEntry) listFilesWithSuffix(urlConfig *swUrlConfig) {
 		}
 	}
 }
-

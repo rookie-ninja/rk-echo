@@ -60,7 +60,7 @@ const (
 func GetRemoteAddressSet(ctx echo.Context) (remoteIp, remotePort string) {
 	remoteIp, remotePort = "0.0.0.0", "0"
 
-	if ctx == nil || ctx.Request == nil {
+	if ctx == nil || ctx.Request() == nil {
 		return
 	}
 

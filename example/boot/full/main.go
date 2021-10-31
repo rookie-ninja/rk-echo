@@ -19,10 +19,8 @@ func main() {
 	// Bootstrap gin entry from boot config
 	res := rkecho.RegisterEchoEntriesWithConfig("example/boot/full/boot.yaml")
 
-	//res["greeter"].(*rkecho.EchoEntry).Echo.GET("/hello", hello)
-	//res["greeter"].(*rkecho.EchoEntry).Echo.HideBanner = true
-	//res["greeter"].(*rkecho.EchoEntry).Echo.HidePort = true
-	//
+	echoEntry := res["greeter"].(*rkecho.EchoEntry)
+	echoEntry.Echo.GET("/hello", hello)
 
 	// Bootstrap gin entry
 	res["greeter"].Bootstrap(context.Background())
@@ -35,6 +33,6 @@ func main() {
 }
 
 // Handler
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
+func hello(ctx echo.Context) error {
+	return ctx.String(http.StatusOK, "Hello, World!")
 }

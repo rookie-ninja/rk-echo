@@ -1,5 +1,9 @@
-package rkechometrics
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
 
+package rkechometrics
 
 import (
 	"github.com/labstack/echo/v4"
@@ -134,7 +138,7 @@ func getValues(ctx echo.Context) []string {
 		rkentry.GlobalAppCtx.GetAppInfoEntry().AppName,
 		method,
 		path,
-		"gin",
+		"echo",
 		resCode,
 	}
 
@@ -230,4 +234,3 @@ func getOptionSet(ctx echo.Context) *optionSet {
 
 	return optionsMap[entryName]
 }
-

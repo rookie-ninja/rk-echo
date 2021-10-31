@@ -264,7 +264,6 @@ func RegisterEchoEntry(opts ...EchoEntryOption) *EchoEntry {
 		EntryType:        EchoEntryType,
 		EntryDescription: EchoEntryDescription,
 		Port:             8080,
-
 	}
 
 	for i := range opts {
@@ -443,7 +442,6 @@ func (entry *EchoEntry) IsSwEnabled() bool {
 func (entry *EchoEntry) IsCommonServiceEnabled() bool {
 	return entry.CommonServiceEntry != nil
 }
-
 
 // Add basic fields into event.
 func (entry *EchoEntry) logBasicInfo(event rkquery.Event) {
