@@ -105,16 +105,16 @@ func main() {
 	// Bootstrap basic entries from boot config.
 	rkentry.RegisterInternalEntriesFromConfig("example/boot/simple/boot.yaml")
 
-	// Bootstrap gin entry from boot config
+	// Bootstrap echo entry from boot config
 	res := rkecho.RegisterEchoEntriesWithConfig("example/boot/simple/boot.yaml")
 
-	// Bootstrap gin entry
+	// Bootstrap echo entry
 	res["greeter"].Bootstrap(context.Background())
 
 	// Wait for shutdown signal
 	rkentry.GlobalAppCtx.WaitForShutdownSig()
 
-	// Interrupt gin entry
+	// Interrupt echo entry
 	res["greeter"].Interrupt(context.Background())
 }
 ```
