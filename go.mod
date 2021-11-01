@@ -13,6 +13,7 @@ require (
 	github.com/rookie-ninja/rk-logger v1.2.3
 	github.com/rookie-ninja/rk-prom v1.1.3
 	github.com/rookie-ninja/rk-query v1.2.4
+	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/swag v1.7.4
 	go.opentelemetry.io/contrib v1.1.0

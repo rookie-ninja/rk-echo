@@ -1,3 +1,8 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
 package rkecholimit
 
 import (
@@ -134,8 +139,10 @@ func newOptionSet(opts ...Option) *optionSet {
 }
 
 // Wait until rate limit pass through
-func (set *optionSet) Wait(ctx echo.Context, method string) (time.Duration, error) {
+func (set *optionSet) Wait(ctx echo.Context) (time.Duration, error) {
 	now := time.Now()
+
+	method := ctx.Request().URL.Path
 
 	limiter := set.getLimiter(method)
 	if err := limiter(ctx); err != nil {

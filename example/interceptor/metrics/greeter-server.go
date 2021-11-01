@@ -42,7 +42,7 @@ func main() {
 	promEntry.Bootstrap(context.Background())
 	defer promEntry.Interrupt(context.Background())
 
-	// 2: Create gin server
+	// 2: Create echo server
 	server := startGreeterServer(interceptors...)
 	defer server.Shutdown(context.TODO())
 

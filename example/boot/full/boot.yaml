@@ -8,3 +8,5 @@ echo:
       enabled: true
     sw:
       enabled: true
+    tv:
+      enabled: true

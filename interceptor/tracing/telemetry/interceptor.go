@@ -1,3 +1,9 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
+// Package rkechotrace is aa middleware of echo framework for recording trace info of RPC
 package rkechotrace
 
 import (

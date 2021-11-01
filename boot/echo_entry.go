@@ -12,15 +12,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rookie-ninja/rk-common/common"
-	rkechopanic "github.com/rookie-ninja/rk-echo/interceptor/panic"
+	"github.com/rookie-ninja/rk-echo/interceptor/auth"
+	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
+	"github.com/rookie-ninja/rk-echo/interceptor/meta"
+	"github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
+	"github.com/rookie-ninja/rk-echo/interceptor/panic"
+	"github.com/rookie-ninja/rk-echo/interceptor/ratelimit"
+	"github.com/rookie-ninja/rk-echo/interceptor/timeout"
+	"github.com/rookie-ninja/rk-echo/interceptor/tracing/telemetry"
 	"github.com/rookie-ninja/rk-entry/entry"
+	"github.com/rookie-ninja/rk-prom"
 	"github.com/rookie-ninja/rk-query"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"net/http"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -45,6 +58,35 @@ func init() {
 // 1: Echo.Enabled: Enable echo entry, default is true.
 // 2: Echo.Name: Name of echo entry, should be unique globally.
 // 3: Echo.Port: Port of echo entry.
+// 4: Echo.Cert.Ref: Reference of rkentry.CertEntry.
+// 5: Echo.SW: See BootConfigSW for details.
+// 6: Echo.CommonService: See BootConfigCommonService for details.
+// 7: Echo.TV: See BootConfigTv for details.
+// 8: Echo.Prom: See BootConfigProm for details.
+// 9: Echo.Interceptors.LoggingZap.Enabled: Enable zap logging interceptor.
+// 10: Echo.Interceptors.MetricsProm.Enable: Enable prometheus interceptor.
+// 11: Echo.Interceptors.auth.Enabled: Enable basic auth.
+// 12: Echo.Interceptors.auth.Basic: Credential for basic auth, scheme: <user:pass>
+// 13: Echo.Interceptors.auth.ApiKey: Credential for X-API-Key.
+// 14: Echo.Interceptors.auth.igorePrefix: List of paths that will be ignored.
+// 15: Echo.Interceptors.Extension.Enabled: Enable extension interceptor.
+// 16: Echo.Interceptors.Extension.Prefix: Prefix of extension header key.
+// 17: Echo.Interceptors.TracingTelemetry.Enabled: Enable tracing interceptor with opentelemetry.
+// 18: Echo.Interceptors.TracingTelemetry.Exporter.File.Enabled: Enable file exporter which support type of stdout and local file.
+// 19: Echo.Interceptors.TracingTelemetry.Exporter.File.OutputPath: Output path of file exporter, stdout and file path is supported.
+// 20: Echo.Interceptors.TracingTelemetry.Exporter.Jaeger.Enabled: Enable jaeger exporter.
+// 21: Echo.Interceptors.TracingTelemetry.Exporter.Jaeger.AgentEndpoint: Specify jeager agent endpoint, localhost:6832 would be used by default.
+// 22: Echo.Interceptors.RateLimit.Enabled: Enable rate limit interceptor.
+// 23: Echo.Interceptors.RateLimit.Algorithm: Algorithm of rate limiter.
+// 24: Echo.Interceptors.RateLimit.ReqPerSec: Request per second.
+// 25: Echo.Interceptors.RateLimit.Paths.path: Name of full path.
+// 26: Echo.Interceptors.RateLimit.Paths.ReqPerSec: Request per second by path.
+// 27: Echo.Interceptors.Timeout.Enabled: Enable timeout interceptor.
+// 28: Echo.Interceptors.Timeout.TimeoutMs: Timeout in milliseconds.
+// 29: Echo.Interceptors.Timeout.Paths.path: Name of full path.
+// 30: Echo.Interceptors.Timeout.Paths.TimeoutMs: Timeout in milliseconds by path.
+// 31: Echo.Logger.ZapLogger.Ref: Zap logger reference, see rkentry.ZapLoggerEntry for details.
+// 32: Echo.Logger.EventLogger.Ref: Event logger reference, see rkentry.EventLoggerEntry for details.
 type BootConfigEcho struct {
 	Echo []struct {
 		Enabled     bool   `yaml:"enabled" json:"enabled"`
@@ -56,7 +98,70 @@ type BootConfigEcho struct {
 		} `yaml:"cert" json:"cert"`
 		SW            BootConfigSw            `yaml:"sw" json:"sw"`
 		CommonService BootConfigCommonService `yaml:"commonService" json:"commonService"`
-		Logger        struct {
+		TV            BootConfigTv            `yaml:"tv" json:"tv"`
+		Prom          BootConfigProm          `yaml:"prom" json:"prom"`
+		Interceptors  struct {
+			LoggingZap struct {
+				Enabled                bool     `yaml:"enabled" json:"enabled"`
+				ZapLoggerEncoding      string   `yaml:"zapLoggerEncoding" json:"zapLoggerEncoding"`
+				ZapLoggerOutputPaths   []string `yaml:"zapLoggerOutputPaths" json:"zapLoggerOutputPaths"`
+				EventLoggerEncoding    string   `yaml:"eventLoggerEncoding" json:"eventLoggerEncoding"`
+				EventLoggerOutputPaths []string `yaml:"eventLoggerOutputPaths" json:"eventLoggerOutputPaths"`
+			} `yaml:"loggingZap" json:"loggingZap"`
+			MetricsProm struct {
+				Enabled bool `yaml:"enabled" json:"enabled"`
+			} `yaml:"metricsProm" json:"metricsProm"`
+			Auth struct {
+				Enabled      bool     `yaml:"enabled" json:"enabled"`
+				IgnorePrefix []string `yaml:"ignorePrefix" json:"ignorePrefix"`
+				Basic        []string `yaml:"basic" json:"basic"`
+				ApiKey       []string `yaml:"apiKey" json:"apiKey"`
+			} `yaml:"auth" json:"auth"`
+			Meta struct {
+				Enabled bool   `yaml:"enabled" json:"enabled"`
+				Prefix  string `yaml:"prefix" json:"prefix"`
+			} `yaml:"meta" json:"meta"`
+			RateLimit struct {
+				Enabled   bool   `yaml:"enabled" json:"enabled"`
+				Algorithm string `yaml:"algorithm" json:"algorithm"`
+				ReqPerSec int    `yaml:"reqPerSec" json:"reqPerSec"`
+				Paths     []struct {
+					Path      string `yaml:"path" json:"path"`
+					ReqPerSec int    `yaml:"reqPerSec" json:"reqPerSec"`
+				} `yaml:"paths" json:"paths"`
+			} `yaml:"rateLimit" json:"rateLimit"`
+			Timeout struct {
+				Enabled   bool `yaml:"enabled" json:"enabled"`
+				TimeoutMs int  `yaml:"timeoutMs" json:"timeoutMs"`
+				Paths     []struct {
+					Path      string `yaml:"path" json:"path"`
+					TimeoutMs int    `yaml:"timeoutMs" json:"timeoutMs"`
+				} `yaml:"paths" json:"paths"`
+			} `yaml:"timeout" json:"timeout"`
+			TracingTelemetry struct {
+				Enabled  bool `yaml:"enabled" json:"enabled"`
+				Exporter struct {
+					File struct {
+						Enabled    bool   `yaml:"enabled" json:"enabled"`
+						OutputPath string `yaml:"outputPath" json:"outputPath"`
+					} `yaml:"file" json:"file"`
+					Jaeger struct {
+						Agent struct {
+							Enabled bool   `yaml:"enabled" json:"enabled"`
+							Host    string `yaml:"host" json:"host"`
+							Port    int    `yaml:"port" json:"port"`
+						} `yaml:"agent" json:"agent"`
+						Collector struct {
+							Enabled  bool   `yaml:"enabled" json:"enabled"`
+							Endpoint string `yaml:"endpoint" json:"endpoint"`
+							Username string `yaml:"username" json:"username"`
+							Password string `yaml:"password" json:"password"`
+						} `yaml:"collector" json:"collector"`
+					} `yaml:"jaeger" json:"jaeger"`
+				} `yaml:"exporter" json:"exporter"`
+			} `yaml:"tracingTelemetry" json:"tracingTelemetry"`
+		} `yaml:"interceptors" json:"interceptors"`
+		Logger struct {
 			ZapLogger struct {
 				Ref string `yaml:"ref" json:"ref"`
 			} `yaml:"zapLogger" json:"zapLogger"`
@@ -80,6 +185,8 @@ type EchoEntry struct {
 	CommonServiceEntry *CommonServiceEntry       `json:"commonServiceEntry" yaml:"commonServiceEntry"`
 	Echo               *echo.Echo                `json:"-" yaml:"-"`
 	Interceptors       []echo.MiddlewareFunc     `json:"-" yaml:"-"`
+	PromEntry          *PromEntry                `json:"promEntry" yaml:"promEntry"`
+	TvEntry            *TvEntry                  `json:"tvEntry" yaml:"tvEntry"`
 }
 
 // EchoEntryOption Echo entry option.
@@ -152,6 +259,20 @@ func WithInterceptorsEcho(inters ...echo.MiddlewareFunc) EchoEntryOption {
 	}
 }
 
+// WithPromEntryEcho provide PromEntry.
+func WithPromEntryEcho(prom *PromEntry) EchoEntryOption {
+	return func(entry *EchoEntry) {
+		entry.PromEntry = prom
+	}
+}
+
+// WithTVEntryEcho provide TvEntry.
+func WithTVEntryEcho(tvEntry *TvEntry) EchoEntryOption {
+	return func(entry *EchoEntry) {
+		entry.TvEntry = tvEntry
+	}
+}
+
 // GetEchoEntry Get EchoEntry from rkentry.GlobalAppCtx.
 func GetEchoEntry(name string) *EchoEntry {
 	entryRaw := rkentry.GlobalAppCtx.GetEntry(name)
@@ -207,6 +328,7 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			eventLoggerEntry = rkentry.GlobalAppCtx.GetEventLoggerEntryDefault()
 		}
 
+		promRegistry := prometheus.NewRegistry()
 		// Did we enabled swagger?
 		var swEntry *SwEntry
 		if element.SW.Enabled {
@@ -231,6 +353,193 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 				WithHeadersSw(headers))
 		}
 
+		// Did we enabled prometheus?
+		var promEntry *PromEntry
+		if element.Prom.Enabled {
+			var pusher *rkprom.PushGatewayPusher
+			if element.Prom.Pusher.Enabled {
+				certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.Prom.Pusher.Cert.Ref)
+				var certStore *rkentry.CertStore
+
+				if certEntry != nil {
+					certStore = certEntry.Store
+				}
+
+				pusher, _ = rkprom.NewPushGatewayPusher(
+					rkprom.WithIntervalMSPusher(time.Duration(element.Prom.Pusher.IntervalMs)*time.Millisecond),
+					rkprom.WithRemoteAddressPusher(element.Prom.Pusher.RemoteAddress),
+					rkprom.WithJobNamePusher(element.Prom.Pusher.JobName),
+					rkprom.WithBasicAuthPusher(element.Prom.Pusher.BasicAuth),
+					rkprom.WithZapLoggerEntryPusher(zapLoggerEntry),
+					rkprom.WithEventLoggerEntryPusher(eventLoggerEntry),
+					rkprom.WithCertStorePusher(certStore))
+			}
+
+			promRegistry.Register(prometheus.NewGoCollector())
+			promEntry = NewPromEntry(
+				WithNameProm(fmt.Sprintf("%s-prom", element.Name)),
+				WithPortProm(element.Port),
+				WithPathProm(element.Prom.Path),
+				WithZapLoggerEntryProm(zapLoggerEntry),
+				WithPromRegistryProm(promRegistry),
+				WithEventLoggerEntryProm(eventLoggerEntry),
+				WithPusherProm(pusher))
+
+			if promEntry.Pusher != nil {
+				promEntry.Pusher.SetGatherer(promEntry.Gatherer)
+			}
+		}
+
+		inters := make([]echo.MiddlewareFunc, 0)
+
+		// Did we enabled logging interceptor?
+		if element.Interceptors.LoggingZap.Enabled {
+			opts := []rkecholog.Option{
+				rkecholog.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkecholog.WithEventLoggerEntry(eventLoggerEntry),
+				rkecholog.WithZapLoggerEntry(zapLoggerEntry),
+			}
+
+			if strings.ToLower(element.Interceptors.LoggingZap.ZapLoggerEncoding) == "json" {
+				opts = append(opts, rkecholog.WithZapLoggerEncoding(rkecholog.ENCODING_JSON))
+			}
+
+			if strings.ToLower(element.Interceptors.LoggingZap.EventLoggerEncoding) == "json" {
+				opts = append(opts, rkecholog.WithEventLoggerEncoding(rkecholog.ENCODING_JSON))
+			}
+
+			if len(element.Interceptors.LoggingZap.ZapLoggerOutputPaths) > 0 {
+				opts = append(opts, rkecholog.WithZapLoggerOutputPaths(element.Interceptors.LoggingZap.ZapLoggerOutputPaths...))
+			}
+
+			if len(element.Interceptors.LoggingZap.EventLoggerOutputPaths) > 0 {
+				opts = append(opts, rkecholog.WithEventLoggerOutputPaths(element.Interceptors.LoggingZap.EventLoggerOutputPaths...))
+			}
+
+			inters = append(inters, rkecholog.Interceptor(opts...))
+		}
+
+		// Did we enabled metrics interceptor?
+		if element.Interceptors.MetricsProm.Enabled {
+			opts := []rkechometrics.Option{
+				rkechometrics.WithRegisterer(promRegistry),
+				rkechometrics.WithEntryNameAndType(element.Name, EchoEntryType),
+			}
+
+			inters = append(inters, rkechometrics.Interceptor(opts...))
+		}
+
+		// Did we enabled tracing interceptor?
+		if element.Interceptors.TracingTelemetry.Enabled {
+			var exporter trace.SpanExporter
+
+			if element.Interceptors.TracingTelemetry.Exporter.File.Enabled {
+				exporter = rkechotrace.CreateFileExporter(element.Interceptors.TracingTelemetry.Exporter.File.OutputPath)
+			}
+
+			if element.Interceptors.TracingTelemetry.Exporter.Jaeger.Agent.Enabled {
+				opts := make([]jaeger.AgentEndpointOption, 0)
+				if len(element.Interceptors.TracingTelemetry.Exporter.Jaeger.Agent.Host) > 0 {
+					opts = append(opts,
+						jaeger.WithAgentHost(element.Interceptors.TracingTelemetry.Exporter.Jaeger.Agent.Host))
+				}
+				if element.Interceptors.TracingTelemetry.Exporter.Jaeger.Agent.Port > 0 {
+					opts = append(opts,
+						jaeger.WithAgentPort(
+							fmt.Sprintf("%d", element.Interceptors.TracingTelemetry.Exporter.Jaeger.Agent.Port)))
+				}
+
+				exporter = rkechotrace.CreateJaegerExporter(jaeger.WithAgentEndpoint(opts...))
+			}
+
+			if element.Interceptors.TracingTelemetry.Exporter.Jaeger.Collector.Enabled {
+				opts := []jaeger.CollectorEndpointOption{
+					jaeger.WithUsername(element.Interceptors.TracingTelemetry.Exporter.Jaeger.Collector.Username),
+					jaeger.WithPassword(element.Interceptors.TracingTelemetry.Exporter.Jaeger.Collector.Password),
+				}
+
+				if len(element.Interceptors.TracingTelemetry.Exporter.Jaeger.Collector.Endpoint) > 0 {
+					opts = append(opts, jaeger.WithEndpoint(element.Interceptors.TracingTelemetry.Exporter.Jaeger.Collector.Endpoint))
+				}
+
+				exporter = rkechotrace.CreateJaegerExporter(jaeger.WithCollectorEndpoint(opts...))
+			}
+
+			opts := []rkechotrace.Option{
+				rkechotrace.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechotrace.WithExporter(exporter),
+			}
+
+			inters = append(inters, rkechotrace.Interceptor(opts...))
+		}
+
+		// Did we enabled extension interceptor?
+		if element.Interceptors.Meta.Enabled {
+			opts := []rkechometa.Option{
+				rkechometa.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechometa.WithPrefix(element.Interceptors.Meta.Prefix),
+			}
+
+			inters = append(inters, rkechometa.Interceptor(opts...))
+		}
+
+		// Did we enabled auth interceptor?
+		if element.Interceptors.Auth.Enabled {
+			opts := make([]rkechoauth.Option, 0)
+			opts = append(opts,
+				rkechoauth.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechoauth.WithBasicAuth(element.Name, element.Interceptors.Auth.Basic...),
+				rkechoauth.WithApiKeyAuth(element.Interceptors.Auth.ApiKey...))
+
+			// Add exceptional path
+			if swEntry != nil {
+				opts = append(opts, rkechoauth.WithIgnorePrefix(strings.TrimSuffix(swEntry.Path, "/")))
+			}
+
+			opts = append(opts, rkechoauth.WithIgnorePrefix("/rk/v1/assets"))
+			opts = append(opts, rkechoauth.WithIgnorePrefix(element.Interceptors.Auth.IgnorePrefix...))
+
+			inters = append(inters, rkechoauth.Interceptor(opts...))
+		}
+
+		// Did we enabled timeout interceptor?
+		// This should be in front of rate limit interceptor since rate limit may block over the threshold of timeout.
+		if element.Interceptors.Timeout.Enabled {
+			opts := make([]rkechotimeout.Option, 0)
+			opts = append(opts,
+				rkechotimeout.WithEntryNameAndType(element.Name, EchoEntryType))
+
+			timeout := time.Duration(element.Interceptors.Timeout.TimeoutMs) * time.Millisecond
+			opts = append(opts, rkechotimeout.WithTimeoutAndResp(timeout, nil))
+
+			for i := range element.Interceptors.Timeout.Paths {
+				e := element.Interceptors.Timeout.Paths[i]
+				timeout := time.Duration(e.TimeoutMs) * time.Millisecond
+				opts = append(opts, rkechotimeout.WithTimeoutAndRespByPath(e.Path, timeout, nil))
+			}
+
+			inters = append(inters, rkechotimeout.Interceptor(opts...))
+		}
+
+		// Did we enabled rate limit interceptor?
+		if element.Interceptors.RateLimit.Enabled {
+			opts := make([]rkecholimit.Option, 0)
+			opts = append(opts,
+				rkecholimit.WithEntryNameAndType(element.Name, EchoEntryType))
+
+			if len(element.Interceptors.RateLimit.Algorithm) > 0 {
+				opts = append(opts, rkecholimit.WithAlgorithm(element.Interceptors.RateLimit.Algorithm))
+			}
+			opts = append(opts, rkecholimit.WithReqPerSec(element.Interceptors.RateLimit.ReqPerSec))
+
+			for i := range element.Interceptors.RateLimit.Paths {
+				e := element.Interceptors.RateLimit.Paths[i]
+				opts = append(opts, rkecholimit.WithReqPerSecByPath(e.Path, e.ReqPerSec))
+			}
+
+			inters = append(inters, rkecholimit.Interceptor(opts...))
+		}
+
 		// Did we enabled common service?
 		var commonServiceEntry *CommonServiceEntry
 		if element.CommonService.Enabled {
@@ -238,6 +547,15 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 				WithNameCommonService(fmt.Sprintf("%s-commonService", element.Name)),
 				WithZapLoggerEntryCommonService(zapLoggerEntry),
 				WithEventLoggerEntryCommonService(eventLoggerEntry))
+		}
+
+		// Did we enabled tv?
+		var tvEntry *TvEntry
+		if element.TV.Enabled {
+			tvEntry = NewTvEntry(
+				WithNameTv(fmt.Sprintf("%s-tv", element.Name)),
+				WithZapLoggerEntryTv(zapLoggerEntry),
+				WithEventLoggerEntryTv(eventLoggerEntry))
 		}
 
 		certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.Cert.Ref)
@@ -249,8 +567,11 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			WithZapLoggerEntryEcho(zapLoggerEntry),
 			WithEventLoggerEntryEcho(eventLoggerEntry),
 			WithCertEntryEcho(certEntry),
+			WithPromEntryEcho(promEntry),
+			WithTVEntryEcho(tvEntry),
 			WithCommonServiceEntryEcho(commonServiceEntry),
-			WithSwEntryEcho(swEntry))
+			WithSwEntryEcho(swEntry),
+			WithInterceptorsEcho(inters...))
 
 		res[name] = entry
 	}
@@ -315,11 +636,24 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 	// Is swagger enabled?
 	if entry.IsSwEnabled() {
 		// Register swagger path into Router.
+		entry.Echo.GET(strings.TrimSuffix(entry.SwEntry.Path, "/"), func(ctx echo.Context) error {
+			ctx.Redirect(http.StatusTemporaryRedirect, entry.SwEntry.Path)
+			return nil
+		})
 		entry.Echo.GET(path.Join(entry.SwEntry.Path, "*"), entry.SwEntry.ConfigFileHandler())
 		entry.Echo.GET("/rk/v1/assets/sw/*", entry.SwEntry.AssetsFileHandler())
 
 		// Bootstrap swagger entry.
 		entry.SwEntry.Bootstrap(ctx)
+	}
+
+	// Is prometheus enabled?
+	if entry.IsPromEnabled() {
+		// Register prom path into Router.
+		entry.Echo.GET(entry.PromEntry.Path, echo.WrapHandler(promhttp.HandlerFor(entry.PromEntry.Gatherer, promhttp.HandlerOpts{})))
+
+		// don't start with http handler, we will handle it by ourselves
+		entry.PromEntry.Bootstrap(ctx)
 	}
 
 	// Is common service enabled?
@@ -342,6 +676,19 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 
 		// Bootstrap common service entry.
 		entry.CommonServiceEntry.Bootstrap(ctx)
+	}
+
+	// Is TV enabled?
+	if entry.IsTvEnabled() {
+		// Bootstrap TV entry.
+		entry.Echo.GET("/rk/v1/tv", func(ctx echo.Context) error {
+			ctx.Redirect(http.StatusTemporaryRedirect, "/rk/v1/tv/")
+			return nil
+		})
+		entry.Echo.GET("/rk/v1/tv/*", entry.TvEntry.TV)
+		entry.Echo.GET("/rk/v1/assets/tv/*", entry.TvEntry.AssetsFileHandler())
+
+		entry.TvEntry.Bootstrap(ctx)
 	}
 
 	logger.Info("Bootstrapping EchoEntry.", event.ListPayloads()...)
@@ -388,6 +735,33 @@ func (entry *EchoEntry) Interrupt(ctx context.Context) {
 
 	logger.Info("Interrupting EchoEntry.", event.ListPayloads()...)
 
+	if entry.IsSwEnabled() {
+		// Interrupt swagger entry
+		entry.SwEntry.Interrupt(ctx)
+	}
+
+	if entry.IsPromEnabled() {
+		// Interrupt prometheus entry
+		entry.PromEntry.Interrupt(ctx)
+	}
+
+	if entry.IsCommonServiceEnabled() {
+		// Interrupt common service entry
+		entry.CommonServiceEntry.Interrupt(ctx)
+	}
+
+	if entry.IsTvEnabled() {
+		// Interrupt common service entry
+		entry.TvEntry.Interrupt(ctx)
+	}
+
+	if entry.Echo != nil {
+		if err := entry.Echo.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+			event.AddErr(err)
+			logger.Warn("Error occurs while stopping echo-server.", event.ListPayloads()...)
+		}
+	}
+
 	entry.EventLoggerEntry.GetEventHelper().Finish(event)
 }
 
@@ -428,6 +802,12 @@ func (entry *EchoEntry) UnmarshalJSON([]byte) error {
 	return nil
 }
 
+// AddInterceptor Add interceptors.
+// This function should be called before Bootstrap() called.
+func (entry *EchoEntry) AddInterceptor(inters ...echo.MiddlewareFunc) {
+	entry.Interceptors = append(entry.Interceptors, inters...)
+}
+
 // IsTlsEnabled Is TLS enabled?
 func (entry *EchoEntry) IsTlsEnabled() bool {
 	return entry.CertEntry != nil && entry.CertEntry.Store != nil
@@ -441,6 +821,16 @@ func (entry *EchoEntry) IsSwEnabled() bool {
 // IsCommonServiceEnabled Is common service entry enabled?
 func (entry *EchoEntry) IsCommonServiceEnabled() bool {
 	return entry.CommonServiceEntry != nil
+}
+
+// IsTvEnabled Is TV entry enabled?
+func (entry *EchoEntry) IsTvEnabled() bool {
+	return entry.TvEntry != nil
+}
+
+// IsPromEnabled Is prometheus entry enabled?
+func (entry *EchoEntry) IsPromEnabled() bool {
+	return entry.PromEntry != nil
 }
 
 // Add basic fields into event.

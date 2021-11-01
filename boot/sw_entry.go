@@ -280,21 +280,17 @@ func (entry *SwEntry) logBasicInfo(event rkquery.Event) {
 
 // AssetsFileHandler Handler for swagger assets files.
 func (entry *SwEntry) AssetsFileHandler() echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		w := ctx.Response().Writer
-		r := ctx.Request()
-
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/rk/v1"), "/")
 
 		if file, err := pkger.Open(path.Join("/boot", p)); err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return err
 		} else {
 			http.ServeContent(w, r, path.Base(p), time.Now(), file)
 		}
+	})
 
-		return nil
-	}
+	return echo.WrapHandler(handler)
 }
 
 // ConfigFileHandler handler for swagger config files.

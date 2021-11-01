@@ -1,3 +1,9 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
+// Package rkecholimit is a middleware of echo framework for adding rate limit in RPC response
 package rkecholimit
 
 import (
@@ -18,7 +24,7 @@ func Interceptor(opts ...Option) echo.MiddlewareFunc {
 
 			event := rkechoctx.GetEvent(ctx)
 
-			if duration, err := set.Wait(ctx, ctx.Request().URL.Path); err != nil {
+			if duration, err := set.Wait(ctx); err != nil {
 				event.SetCounter("rateLimitWaitMs", duration.Milliseconds())
 				event.AddErr(err)
 

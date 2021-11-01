@@ -1,3 +1,9 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
+// Package rkechotimeout is a middleware of echo framework for timing out request in RPC response
 package rkechotimeout
 
 import (
@@ -13,9 +19,7 @@ func Interceptor(opts ...Option) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			ctx.Set(rkechointer.RpcEntryNameKey, set.EntryName)
 
-			set.Tick(ctx, next)
-
-			return nil
+			return set.Tick(ctx, next)
 		}
 	}
 }

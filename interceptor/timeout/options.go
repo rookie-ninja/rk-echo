@@ -1,3 +1,8 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
 package rkechotimeout
 
 import (
@@ -14,10 +19,6 @@ const global = "rk-global"
 
 var (
 	defaultResponse = func(ctx echo.Context) error {
-		ctx.JSON(http.StatusRequestTimeout, rkerror.New(
-			rkerror.WithHttpCode(http.StatusRequestTimeout),
-			rkerror.WithMessage("Request timed out!")))
-
 		return nil
 	}
 	defaultTimeout  = 5 * time.Second
@@ -64,7 +65,9 @@ func newOptionSet(opts ...Option) *optionSet {
 // If timeout triggered, then return http.StatusRequestTimeout back to client.
 //
 // Mainly copied from https://github.com/gin-contrib/timeout/blob/master/timeout.go
-func (set *optionSet) Tick(ctx echo.Context, next echo.HandlerFunc) {
+func (set *optionSet) Tick(ctx echo.Context, next echo.HandlerFunc) error {
+	var err error
+
 	rk := set.getTimeoutRk(ctx.Path())
 
 	event := rkechoctx.GetEvent(ctx)
@@ -99,7 +102,7 @@ func (set *optionSet) Tick(ctx echo.Context, next echo.HandlerFunc) {
 			}
 		}()
 
-		next(ctx)
+		err = next(ctx)
 		finishChan <- struct{}{}
 	}()
 
@@ -132,8 +135,6 @@ func (set *optionSet) Tick(ctx echo.Context, next echo.HandlerFunc) {
 		bufPool.Put(buffer)
 	// 5.3: free buffer and switch to original writer. Timeout response will be attached to response too.
 	case <-timeoutChan:
-		ctx.Response().Committed = true
-
 		// set as timeout
 		event.SetCounter("timeout", 1)
 
@@ -150,12 +151,29 @@ func (set *optionSet) Tick(ctx echo.Context, next echo.HandlerFunc) {
 		ctx.Response().Writer = originalWriter
 
 		// write timed out response
-		rk.response(ctx)
+		err = rk.response(ctx)
+
+		var resp interface{}
+
+		if err != nil {
+			resp = rkerror.New(
+				rkerror.WithHttpCode(http.StatusRequestTimeout),
+				rkerror.WithMessage("Request timed out!"),
+				rkerror.WithDetails(err))
+		} else {
+			resp = rkerror.New(
+				rkerror.WithHttpCode(http.StatusRequestTimeout),
+				rkerror.WithMessage("Request timed out!"))
+		}
+
+		ctx.JSON(http.StatusRequestTimeout, resp)
 
 		// switch back to new writer since user code may still want to write to it.
 		// Panic may occur if we ignore this step.
 		ctx.Response().Writer = newWriter
 	}
+
+	return err
 }
 
 // Get timeout instance with path.
