@@ -26,7 +26,7 @@ const (
 	GlobalLimiter = "rk-limiter"
 )
 
-// User could implement
+// Limiter which user could implement
 type Limiter func(ctx echo.Context) error
 
 // NoopLimiter will do nothing
