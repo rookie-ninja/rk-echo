@@ -4,7 +4,6 @@
 // license that can be found in the LICENSE file.
 
 // Package rkechoctx defines utility functions and variables used by Echo middleware
-
 package rkechoctx
 
 import (

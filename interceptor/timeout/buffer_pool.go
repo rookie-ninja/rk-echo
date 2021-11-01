@@ -3,13 +3,14 @@
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
 
-// Copied from https://github.com/gin-contrib/timeout/blob/master/buffer_pool.go
 package rkechotimeout
 
 import (
 	"bytes"
 	"sync"
 )
+
+// Copied from https://github.com/gin-contrib/timeout/blob/master/buffer_pool.go
 
 // bufferPool is Pool of *bytes.Buffer
 type bufferPool struct {

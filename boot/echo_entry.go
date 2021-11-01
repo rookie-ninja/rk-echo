@@ -4,7 +4,6 @@
 // license that can be found in the LICENSE file.
 
 // Package rkecho an implementation of rkentry.Entry which could be used start restful server with echo framework
-
 package rkecho
 
 import (

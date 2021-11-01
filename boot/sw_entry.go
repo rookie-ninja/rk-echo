@@ -12,6 +12,8 @@ import (
 	"github.com/markbates/pkger"
 	"github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-entry/entry"
+	"io"
+
 	// Importing in order to make swag.Read() to be validated
 	_ "github.com/rookie-ninja/rk-echo/boot/assets/sw/config"
 	"github.com/rookie-ninja/rk-query"
@@ -283,11 +285,15 @@ func (entry *SwEntry) AssetsFileHandler() echo.HandlerFunc {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/rk/v1"), "/")
 
-		if file, err := pkger.Open(path.Join("/boot", p)); err != nil {
+		var file io.ReadSeeker
+		var err error
+
+		if file, err = pkger.Open(path.Join("/boot", p)); err != nil {
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		} else {
-			http.ServeContent(w, r, path.Base(p), time.Now(), file)
+			return
 		}
+
+		http.ServeContent(w, r, path.Base(p), time.Now(), file)
 	})
 
 	return echo.WrapHandler(handler)
@@ -309,12 +315,15 @@ func (entry *SwEntry) ConfigFileHandler() echo.HandlerFunc {
 
 		switch p {
 		case "/sw":
-			if file, err := pkger.Open(path.Join("/boot/assets/sw/index.html")); err != nil {
+			var file io.ReadSeeker
+			var err error
+
+			if file, err = pkger.Open(path.Join("/boot/assets/sw/index.html")); err != nil {
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 				return err
-			} else {
-				http.ServeContent(w, r, "index.html", time.Now(), file)
 			}
+
+			http.ServeContent(w, r, "index.html", time.Now(), file)
 		case "/sw/swagger-config.json":
 			http.ServeContent(w, r, "swagger-config.json", time.Now(), strings.NewReader(swConfigFileContents))
 		default:
@@ -323,9 +332,9 @@ func (entry *SwEntry) ConfigFileHandler() echo.HandlerFunc {
 
 			if ok {
 				http.ServeContent(w, r, p, time.Now(), strings.NewReader(value))
-			} else {
-				http.NotFound(w, r)
+				break
 			}
+			http.NotFound(w, r)
 		}
 
 		return nil

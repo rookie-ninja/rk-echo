@@ -16,9 +16,13 @@ import (
 )
 
 const (
-	TokenBucket   = "tokenBucket"
-	LeakyBucket   = "leakyBucket"
-	DefaultLimit  = 1000000
+	// TokenBucket algorithm
+	TokenBucket = "tokenBucket"
+	// LeakyBucket algorithm
+	LeakyBucket = "leakyBucket"
+	// DefaultLimit one million per second
+	DefaultLimit = 1000000
+	// GlobalLimiter key for default limiter
 	GlobalLimiter = "rk-limiter"
 )
 

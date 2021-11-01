@@ -3,7 +3,6 @@
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
 
-// Copied from https://github.com/gin-contrib/timeout/blob/master/writer.go
 package rkechotimeout
 
 import (
@@ -13,6 +12,8 @@ import (
 	"net/http"
 	"sync"
 )
+
+// Copied from https://github.com/gin-contrib/timeout/blob/master/writer.go
 
 // writer is a writer with memory buffer
 type writer struct {
