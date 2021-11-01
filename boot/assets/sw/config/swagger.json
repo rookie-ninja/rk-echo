@@ -368,6 +368,31 @@
                     }
                 }
             }
+        },
+        "/rk/v1/tv/": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "produces": [
+                    "text/html"
+                ],
+                "summary": "Get HTML page of /tv/",
+                "operationId": "15",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

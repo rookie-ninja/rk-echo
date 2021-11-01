@@ -593,6 +593,20 @@ paths:
       - ApiKeyAuth: []
       - BasicAuth: []
       summary: Get OS Stat
+  /rk/v1/tv/:
+    get:
+      operationId: "15"
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      - BasicAuth: []
+      summary: Get HTML page of /tv/
 schemes:
 - http
 - https
