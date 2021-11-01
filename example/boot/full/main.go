@@ -6,10 +6,8 @@ package main
 
 import (
 	"context"
-	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/boot"
 	"github.com/rookie-ninja/rk-entry/entry"
-	"net/http"
 )
 
 func main() {
@@ -19,9 +17,6 @@ func main() {
 	// Bootstrap gin entry from boot config
 	res := rkecho.RegisterEchoEntriesWithConfig("example/boot/full/boot.yaml")
 
-	echoEntry := res["greeter"].(*rkecho.EchoEntry)
-	echoEntry.Echo.GET("/hello", hello)
-
 	// Bootstrap gin entry
 	res["greeter"].Bootstrap(context.Background())
 
@@ -30,9 +25,4 @@ func main() {
 
 	// Interrupt gin entry
 	res["greeter"].Interrupt(context.Background())
-}
-
-// Handler
-func hello(ctx echo.Context) error {
-	return ctx.String(http.StatusOK, "Hello, World!")
 }
