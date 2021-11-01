@@ -1,5 +1,6 @@
 # rk-echo
 [![build](https://github.com/rookie-ninja/rk-echo/actions/workflows/ci.yml/badge.svg)](https://github.com/rookie-ninja/rk-echo/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/rookie-ninja/rk-echo/branch/master/graph/badge.svg?token=Y1HM9UQBX6)](https://codecov.io/gh/rookie-ninja/rk-echo)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rookie-ninja/rk-echo)](https://goreportcard.com/report/github.com/rookie-ninja/rk-echo)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
