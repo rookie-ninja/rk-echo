@@ -16,8 +16,8 @@ import (
 	"strings"
 )
 
-// In this example, we will start a new echo server with meta interceptor enabled.
-// Listen on port of 8080 with GET /rk/v1/greeter?name=<xxx>.
+// In this example, we will start a new echo server with gzip interceptor enabled.
+// Listen on port of 8080 with POST /rk/v1/post.
 func main() {
 	// ******************************************************
 	// ********** Override App name and version *************
