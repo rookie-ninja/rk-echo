@@ -32,7 +32,7 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		rkechogzip.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		// rkechometa.WithEntryNameAndType("greeter", "echo"),
+		// rkechogzip.WithEntryNameAndType("greeter", "echo"),
 		//
 		// Provide level of compression.
 		// Available options are
