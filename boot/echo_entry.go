@@ -124,7 +124,7 @@ type BootConfigEcho struct {
 			Gzip struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Level   string `yaml:"level" json:"level"`
-			}
+			} `yaml:"gzip" json:"gzip"`
 			RateLimit struct {
 				Enabled   bool   `yaml:"enabled" json:"enabled"`
 				Algorithm string `yaml:"algorithm" json:"algorithm"`

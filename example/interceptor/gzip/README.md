@@ -84,7 +84,7 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/gzip"
 ## Example
 ### Start server
 ```shell script
-$ go run greeter-server.go
+$ go run post-server.go
 ```
 
 ### Output
