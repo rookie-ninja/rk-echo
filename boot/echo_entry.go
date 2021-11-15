@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-echo/interceptor/auth"
+	rkechogzip "github.com/rookie-ninja/rk-echo/interceptor/gzip"
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-echo/interceptor/meta"
 	"github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
@@ -120,6 +121,10 @@ type BootConfigEcho struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Prefix  string `yaml:"prefix" json:"prefix"`
 			} `yaml:"meta" json:"meta"`
+			Gzip struct {
+				Enabled bool   `yaml:"enabled" json:"enabled"`
+				Level   string `yaml:"level" json:"level"`
+			}
 			RateLimit struct {
 				Enabled   bool   `yaml:"enabled" json:"enabled"`
 				Algorithm string `yaml:"algorithm" json:"algorithm"`
@@ -472,7 +477,17 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			inters = append(inters, rkechotrace.Interceptor(opts...))
 		}
 
-		// Did we enabled extension interceptor?
+		// Did we enabled gzip interceptor?
+		if element.Interceptors.Gzip.Enabled {
+			opts := []rkechogzip.Option{
+				rkechogzip.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechogzip.WithLevel(element.Interceptors.Gzip.Level),
+			}
+
+			inters = append(inters, rkechogzip.Interceptor(opts...))
+		}
+
+		// Did we enabled meta interceptor?
 		if element.Interceptors.Meta.Enabled {
 			opts := []rkechometa.Option{
 				rkechometa.WithEntryNameAndType(element.Name, EchoEntryType),
