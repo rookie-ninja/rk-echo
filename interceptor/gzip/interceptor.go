@@ -3,6 +3,7 @@
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
 
+// Package rkechogzip is a middleware for echo framework which compress/decompress data for RPC
 package rkechogzip
 
 import (

@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file.
 //
 // Copied from https://github.com/labstack/echo/blob/master/middleware/cors.go
+
 package rkechocors
 
 import (

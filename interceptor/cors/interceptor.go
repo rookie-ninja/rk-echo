@@ -1,3 +1,9 @@
+// Copyright (c) 2021 rookie-ninja
+//
+// Use of this source code is governed by an Apache-style
+// license that can be found in the LICENSE file.
+
+// Package rkechocors is a CORS middleware for echo framework
 package rkechocors
 
 import (
