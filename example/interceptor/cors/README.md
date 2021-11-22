@@ -1,4 +1,4 @@
-# Meta interceptor
+# CORS interceptor
 In this example, we will try to create echo server with cors interceptor enabled.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
@@ -24,10 +24,10 @@ go get -u github.com/rookie-ninja/rk-echo
 ```
 
 ### Code
-Add rkechometa.Interceptor() meta with option.
+Add rkechocors.Interceptor() CORS with option.
 
 ```go
-import     "github.com/rookie-ninja/rk-echo/interceptor/meta"
+import     "github.com/rookie-ninja/rk-echo/interceptor/cors"
 ```
 
 ```go
@@ -43,7 +43,7 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/meta"
 
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkechocors.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | gin, gin |
+| rkechocors.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple CORS interceptors needs to be used. | gin, gin |
 | rkechocors.WithSkipper(func) | Provide skipper function | Function always return false. |
 | rkechocors.WithAllowOrigins(string...) | Provide allowed origins with wildcard enabled | * |
 | rkechocors.WithAllowMethods(string...) | Provide allowed methods returns as response header of OPTIONS request | All http methods |
