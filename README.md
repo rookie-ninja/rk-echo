@@ -23,6 +23,7 @@ Interceptor & bootstrapper designed for echo framework. Currently, supports bell
 | RateLimit interceptor | Limiting RPC rate |
 | Timeout interceptor | Timing out request by configuration. |
 | Gzip interceptor | Compress and Decompress message body based on request header. |
+| CORS interceptor | Server side CORS interceptor. |
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -53,6 +54,7 @@ Interceptor & bootstrapper designed for echo framework. Currently, supports bell
     - [RateLimit](#ratelimit)
     - [Timeout](#timeout)
     - [Gzip](#gzip)
+    - [CORS](#cors)
   - [Development Status: Stable](#development-status-stable)
   - [Contributing](#contributing)
 
@@ -400,6 +402,17 @@ Send application metadata as header to client.
 | ------ | ------ | ------ | ------ |
 | echo.interceptors.gzip.enabled | Enable gzip interceptor | boolean | false |
 | echo.interceptors.gzip.level | Provide level of compression, options are noCompression, bestSpeed, bestCompression, defaultCompression, huffmanOnly. | string | defaultCompression |
+
+#### CORS
+| name | description | type | default value |
+| ------ | ------ | ------ | ------ |
+| echo.interceptors.cors.enabled | Enable cors interceptor | boolean | false |
+| echo.interceptors.cors.allowOrigins | Provide allowed origins with wildcard enabled. | []string | * |
+| echo.interceptors.cors.allowMethods | Provide allowed methods returns as response header of OPTIONS request. | []string | All http methods |
+| echo.interceptors.cors.allowHeaders | Provide allowed headers returns as response header of OPTIONS request. | []string | Headers from request |
+| echo.interceptors.cors.allowCredentials | Returns as response header of OPTIONS request. | bool | false |
+| echo.interceptors.cors.exposeHeaders | Provide exposed headers returns as response header of OPTIONS request. | []string | "" |
+| echo.interceptors.cors.maxAge | Provide max age returns as response header of OPTIONS request. | int | 0 |
 
 ### Development Status: Stable
 

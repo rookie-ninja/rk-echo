@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-echo/interceptor/auth"
+	rkechocors "github.com/rookie-ninja/rk-echo/interceptor/cors"
 	rkechogzip "github.com/rookie-ninja/rk-echo/interceptor/gzip"
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-echo/interceptor/meta"
@@ -117,6 +118,15 @@ type BootConfigEcho struct {
 				Basic        []string `yaml:"basic" json:"basic"`
 				ApiKey       []string `yaml:"apiKey" json:"apiKey"`
 			} `yaml:"auth" json:"auth"`
+			Cors struct {
+				Enabled          bool     `yaml:"enabled" json:"enabled"`
+				AllowOrigins     []string `yaml:"allowOrigins" json:"allowOrigins"`
+				AllowCredentials bool     `yaml:"allowCredentials" json:"allowCredentials"`
+				AllowHeaders     []string `yaml:"allowHeaders" json:"allowHeaders"`
+				AllowMethods     []string `yaml:"allowMethods" json:"allowMethods"`
+				ExposeHeaders    []string `yaml:"exposeHeaders" json:"exposeHeaders"`
+				MaxAge           int      `yaml:"maxAge" json:"maxAge"`
+			} `yaml:"cors" json:"cors"`
 			Meta struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Prefix  string `yaml:"prefix" json:"prefix"`
@@ -475,6 +485,21 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			}
 
 			inters = append(inters, rkechotrace.Interceptor(opts...))
+		}
+
+		// Did we enabled cors interceptor?
+		if element.Interceptors.Cors.Enabled {
+			opts := []rkechocors.Option{
+				rkechocors.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechocors.WithAllowOrigins(element.Interceptors.Cors.AllowOrigins...),
+				rkechocors.WithAllowCredentials(element.Interceptors.Cors.AllowCredentials),
+				rkechocors.WithExposeHeaders(element.Interceptors.Cors.ExposeHeaders...),
+				rkechocors.WithMaxAge(element.Interceptors.Cors.MaxAge),
+				rkechocors.WithAllowHeaders(element.Interceptors.Cors.AllowHeaders...),
+				rkechocors.WithAllowMethods(element.Interceptors.Cors.AllowMethods...),
+			}
+
+			inters = append(inters, rkechocors.Interceptor(opts...))
 		}
 
 		// Did we enabled gzip interceptor?
