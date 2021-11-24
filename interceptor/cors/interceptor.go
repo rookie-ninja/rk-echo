@@ -50,12 +50,6 @@ func Interceptor(opts ...Option) echo.MiddlewareFunc {
 
 			// 2: origin not allowed, we will return 204 if request is not a OPTION method
 			if !set.isOriginAllowed(originHeader) {
-				// 2.1: if not a preflight request, then pass through
-				if !preflight {
-					return ctx.NoContent(http.StatusFound)
-				}
-
-				// 2.2: if it is a preflight request, then return with 204
 				return ctx.NoContent(http.StatusNoContent)
 			}
 

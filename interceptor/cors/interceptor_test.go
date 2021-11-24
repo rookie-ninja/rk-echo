@@ -49,13 +49,7 @@ func TestInterceptor(t *testing.T) {
 	assert.Nil(t, handler(userHandler)(ctx))
 	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
 
-	// match 2.1
-	ctx = newCtx(http.MethodGet)
-	handler = Interceptor(WithAllowOrigins("http://do-not-pass-through"))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusFound, ctx.Response().Status)
-
-	// match 2.2
+	// match 2
 	ctx = newCtx(http.MethodOptions)
 	handler = Interceptor(WithAllowOrigins("http://do-not-pass-through"))
 	assert.Nil(t, handler(userHandler)(ctx))
