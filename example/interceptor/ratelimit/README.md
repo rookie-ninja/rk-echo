@@ -48,12 +48,12 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/ratelimit"
 ## Options
 | Name | Default | Description |
 | ---- | ---- | ---- |
-| WithEntryNameAndType(entryName, entryType string) | entryName=grpc, entryType=grpc | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
+| WithEntryNameAndType(entryName, entryType string) | entryName=gf, entryType=gf | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
 | WithReqPerSec(int) | int | Global rate limit per second. |
-| WithReqPerSecByPath(path string, reqPerSec int) | "", 0 | Request limiter by gRPC method. |
+| WithReqPerSecByPath(path string, reqPerSec int) | "", 0 | Request limiter by Restful method. |
 | WithAlgorithm(algo string) | tokenBucket | Algorithm of rate limiter. |
 | WithGlobalLimiter(l Limiter) | nil | Provider user defined limiter. |
-| WithLimiterByPath(path string, l Limiter) | "", nil | Provider user defined limiter by gRPC method. |
+| WithLimiterByPath(path string, l Limiter) | "", nil | Provider user defined limiter by Restful method. |
 
 ```go
 	// ********************************************

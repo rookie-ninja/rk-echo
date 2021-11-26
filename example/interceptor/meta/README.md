@@ -63,7 +63,7 @@ Meta interceptor is only available on server side. The interceptor will send bel
 
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkechometa.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | gin, gin |
+| rkechometa.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | echo, echo |
 | rkechometa.WithPrefix(prefix string) | Provide prefix of meta header | RK |
 
 ```go
@@ -150,7 +150,7 @@ func main() {
     rkentry.GlobalAppCtx.GetAppInfoEntry().AppName = "demo-app"
     rkentry.GlobalAppCtx.GetAppInfoEntry().Version = "demo-version"
 
-    // 1: Create gin server
+    // 1: Create echo server
     server := startGreeterServer(opts...)
     ...
 }

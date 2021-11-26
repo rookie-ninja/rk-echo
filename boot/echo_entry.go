@@ -652,9 +652,6 @@ func RegisterEchoEntry(opts ...EchoEntryOption) *EchoEntry {
 		entry.Echo.HideBanner = true
 	}
 
-	// Default interceptor should be at front
-	entry.Echo.Use(entry.Interceptors...)
-
 	rkentry.GlobalAppCtx.AddEntry(entry)
 
 	return entry
@@ -729,6 +726,9 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 
 		entry.TvEntry.Bootstrap(ctx)
 	}
+
+	// Default interceptor should be at front
+	entry.Echo.Use(entry.Interceptors...)
 
 	logger.Info("Bootstrapping EchoEntry.", event.ListPayloads()...)
 	go func(echoEntry *EchoEntry) {
