@@ -17,6 +17,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/auth"
 	"github.com/rookie-ninja/rk-echo/interceptor/cors"
 	"github.com/rookie-ninja/rk-echo/interceptor/gzip"
+	rkechojwt "github.com/rookie-ninja/rk-echo/interceptor/jwt"
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-echo/interceptor/meta"
 	"github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
@@ -131,6 +132,15 @@ type BootConfigEcho struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Prefix  string `yaml:"prefix" json:"prefix"`
 			} `yaml:"meta" json:"meta"`
+			Jwt struct {
+				Enabled      bool     `yaml:"enabled" json:"enabled"`
+				IgnorePrefix []string `yaml:"ignorePrefix" json:"ignorePrefix"`
+				SigningKey   string   `yaml:"signingKey" json:"signingKey"`
+				SigningKeys  []string `yaml:"signingKeys" json:"signingKeys"`
+				SigningAlgo  string   `yaml:"signingAlgo" json:"signingAlgo"`
+				TokenLookup  string   `yaml:"tokenLookup" json:"tokenLookup"`
+				AuthScheme   string   `yaml:"authScheme" json:"authScheme"`
+			} `yaml:"jwt" json:"jwt"`
 			Gzip struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Level   string `yaml:"level" json:"level"`
@@ -485,6 +495,32 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			}
 
 			inters = append(inters, rkechotrace.Interceptor(opts...))
+		}
+
+		// Did we enabled jwt interceptor?
+		if element.Interceptors.Jwt.Enabled {
+			var signingKey []byte
+			if len(element.Interceptors.Jwt.SigningKey) > 0 {
+				signingKey = []byte(element.Interceptors.Jwt.SigningKey)
+			}
+
+			opts := []rkechojwt.Option{
+				rkechojwt.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechojwt.WithSigningKey(signingKey),
+				rkechojwt.WithSigningAlgorithm(element.Interceptors.Jwt.SigningAlgo),
+				rkechojwt.WithTokenLookup(element.Interceptors.Jwt.TokenLookup),
+				rkechojwt.WithAuthScheme(element.Interceptors.Jwt.AuthScheme),
+				rkechojwt.WithIgnorePrefix(element.Interceptors.Jwt.IgnorePrefix...),
+			}
+
+			for _, v := range element.Interceptors.Jwt.SigningKeys {
+				tokens := strings.SplitN(v, ":", 2)
+				if len(tokens) == 2 {
+					opts = append(opts, rkechojwt.WithSigningKeys(tokens[0], tokens[1]))
+				}
+			}
+
+			inters = append(inters, rkechojwt.Interceptor(opts...))
 		}
 
 		// Did we enabled cors interceptor?

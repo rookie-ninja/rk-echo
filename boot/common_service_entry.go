@@ -51,6 +51,10 @@ var (
 // @in header
 // @name X-API-Key
 
+// @securityDefinitions.apikey JWT
+// @in header
+// @name Authorization
+
 // @schemes http https
 
 // BootConfigCommonService Bootstrap config of common service.
@@ -237,6 +241,7 @@ func doHealthy(echo.Context) *rkentry.HealthyResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.HealthyResponse
 // @Router /rk/v1/healthy [get]
@@ -267,6 +272,7 @@ func doGc(echo.Context) *rkentry.GcResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.GcResponse
 // @Router /rk/v1/gc [get]
@@ -290,6 +296,7 @@ func doInfo(echo.Context) *rkentry.ProcessInfo {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.ProcessInfo
 // @Router /rk/v1/info [get]
@@ -329,6 +336,7 @@ func doConfigs(echo.Context) *rkentry.ConfigsResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.ConfigsResponse
 // @Router /rk/v1/configs [get]
@@ -395,6 +403,7 @@ func doApis(ctx echo.Context) *rkentry.ApisResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.ApisResponse
 // @Router /rk/v1/apis [get]
@@ -426,6 +435,7 @@ func doSys(echo.Context) *rkentry.SysResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.SysResponse
 // @Router /rk/v1/sys [get]
@@ -494,6 +504,7 @@ func doReq(ctx echo.Context) *rkentry.ReqResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @success 200 {object} rkentry.ReqResponse
 // @Router /rk/v1/req [get]
@@ -560,6 +571,7 @@ func doEntries(ctx echo.Context) *rkentry.EntriesResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.EntriesResponse
 // @Router /rk/v1/entries [get]
@@ -617,6 +629,7 @@ func doCerts(ctx echo.Context) *rkentry.CertsResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.CertsResponse
 // @Router /rk/v1/certs [get]
@@ -691,6 +704,7 @@ func doLogs(ctx echo.Context) *rkentry.LogsResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.LogsResponse
 // @Router /rk/v1/logs [get]
@@ -724,6 +738,7 @@ func getEntry(ctx echo.Context) *EchoEntry {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.DepResponse
 // @Router /rk/v1/deps [get]
@@ -756,6 +771,7 @@ func doDeps(ctx echo.Context) *rkentry.DepResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.LicenseResponse
 // @Router /rk/v1/license [get]
@@ -788,6 +804,7 @@ func doLicense(ctx echo.Context) *rkentry.LicenseResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.ReadmeResponse
 // @Router /rk/v1/readme [get]
@@ -820,6 +837,7 @@ func doReadme(ctx echo.Context) *rkentry.ReadmeResponse {
 // @version 1.0
 // @Security ApiKeyAuth
 // @Security BasicAuth
+// @Security JWT
 // @produce application/json
 // @Success 200 {object} rkentry.GitResponse
 // @Router /rk/v1/git [get]

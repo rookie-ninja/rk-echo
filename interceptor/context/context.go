@@ -8,6 +8,7 @@ package rkechoctx
 
 import (
 	"context"
+	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/interceptor"
 	"github.com/rookie-ninja/rk-logger"
@@ -214,4 +215,18 @@ func EndTraceSpan(ctx echo.Context, span trace.Span, success bool) {
 	}
 
 	span.End()
+}
+
+func GetJwtToken(ctx echo.Context) *jwt.Token {
+	if ctx == nil {
+		return nil
+	}
+
+	if raw := ctx.Get(rkechointer.RpcJwtTokenKey); raw != nil {
+		if res, ok := raw.(*jwt.Token); ok {
+			return res
+		}
+	}
+
+	return nil
 }
