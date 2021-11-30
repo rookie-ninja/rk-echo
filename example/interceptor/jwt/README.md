@@ -1,4 +1,4 @@
-# JWTR interceptor
+# JWT interceptor
 In this example, we will try to create echo server with JWT middleware enabled.
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
