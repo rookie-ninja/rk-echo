@@ -27,7 +27,7 @@ go get -u github.com/rookie-ninja/rk-echo
 Add rkechojwt.Interceptor() jwt with option.
 
 ```go
-import     "github.com/rookie-ninja/rk-echo/interceptor/meta"
+import     "github.com/rookie-ninja/rk-echo/interceptor/jwt"
 ```
 ```go
     // ********************************************
@@ -44,7 +44,7 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/meta"
 ## Options
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkechojwt.WithEntryNameAndType(entryName, entryType string) | Optional. Provide entry name and type if there are multiple meta interceptors needs to be used. | echo, echo |
+| rkechojwt.WithEntryNameAndType(entryName, entryType string) | Optional. Provide entry name and type if there are multiple jwt interceptors needs to be used. | echo, echo |
 | rkechojwt.WithSkipper(skipper function) | Optional. Provide skipper function | function always returns false |
 | rkechojwt.WithSigningKey(interface{}) | Required. Provide signing key | nil |
 | rkechojwt.WithSigningKeys(string, interface{}) | Optional. Provide signing key value pairs | empty |
