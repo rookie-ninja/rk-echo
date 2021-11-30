@@ -114,6 +114,7 @@ echo:
 #        paths:
 #          - path: "/rk/v1/healthy"                        # Optional, default: ""
 #            timeoutMs: 1000                               # Optional, default: 5000
+#      jwt:
 #        enabled: true                                     # Optional, default: false
 #        signingKey: "my-secret"                           # Required
 #        ignorePrefix:                                     # Optional, default: []
