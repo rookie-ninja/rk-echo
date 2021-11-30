@@ -217,6 +217,7 @@ func EndTraceSpan(ctx echo.Context, span trace.Span, success bool) {
 	span.End()
 }
 
+// GetJwtToken return jwt.Token if exists
 func GetJwtToken(ctx echo.Context) *jwt.Token {
 	if ctx == nil {
 		return nil
