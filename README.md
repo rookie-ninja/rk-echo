@@ -25,6 +25,7 @@ Interceptor & bootstrapper designed for echo framework. Currently, supports bell
 | Gzip interceptor | Compress and Decompress message body based on request header. |
 | CORS interceptor | Server side CORS interceptor. |
 | JWT interceptor | Server side JWT interceptor. |
+| Secure interceptor | Server side secure interceptor. |
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -57,6 +58,7 @@ Interceptor & bootstrapper designed for echo framework. Currently, supports bell
     - [Gzip](#gzip)
     - [CORS](#cors)
     - [JWT](#jwt)
+    - [Secure](#secure)
   - [Development Status: Stable](#development-status-stable)
   - [Contributing](#contributing)
 
@@ -451,6 +453,21 @@ The supported scheme of **tokenLookup**
 // Multiply sources example:
 // - "header: Authorization,cookie: myowncookie"
 ```
+
+#### Secure
+| name | description | type | default value |
+| ------ | ------ | ------ | ------ |
+| echo.interceptors.secure.enabled | Enable secure interceptor | boolean | false |
+| echo.interceptors.secure.xssProtection | X-XSS-Protection header value. | string | "1; mode=block" |
+| echo.interceptors.secure.contentTypeNosniff | X-Content-Type-Options header value. | string | nosniff |
+| echo.interceptors.secure.xFrameOptions | X-Frame-Options header value. | string | SAMEORIGIN |
+| echo.interceptors.secure.hstsMaxAge | Strict-Transport-Security header value. | int | 0 |
+| echo.interceptors.secure.hstsExcludeSubdomains | Excluding subdomains of HSTS. | bool | false |
+| echo.interceptors.secure.hstsPreloadEnabled | Enabling HSTS preload. | bool | false |
+| echo.interceptors.secure.contentSecurityPolicy | Content-Security-Policy header value. | string | "" |
+| echo.interceptors.secure.cspReportOnly | Content-Security-Policy-Report-Only header value. | bool | false |
+| echo.interceptors.secure.referrerPolicy | Referrer-Policy header value. | string | "" |
+| echo.interceptors.secure.ignorePrefix | Ignoring path prefix. | []string | [] |
 
 ### Development Status: Stable
 

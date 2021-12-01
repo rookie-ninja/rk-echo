@@ -23,6 +23,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
 	"github.com/rookie-ninja/rk-echo/interceptor/panic"
 	"github.com/rookie-ninja/rk-echo/interceptor/ratelimit"
+	rkechosec "github.com/rookie-ninja/rk-echo/interceptor/secure"
 	"github.com/rookie-ninja/rk-echo/interceptor/timeout"
 	"github.com/rookie-ninja/rk-echo/interceptor/tracing/telemetry"
 	"github.com/rookie-ninja/rk-entry/entry"
@@ -33,6 +34,8 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"path"
+	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -141,6 +144,19 @@ type BootConfigEcho struct {
 				TokenLookup  string   `yaml:"tokenLookup" json:"tokenLookup"`
 				AuthScheme   string   `yaml:"authScheme" json:"authScheme"`
 			} `yaml:"jwt" json:"jwt"`
+			Secure struct {
+				Enabled               bool     `yaml:"enabled" json:"enabled"`
+				IgnorePrefix          []string `yaml:"ignorePrefix" json:"ignorePrefix"`
+				XssProtection         string   `yaml:"xssProtection" json:"xssProtection"`
+				ContentTypeNosniff    string   `yaml:"contentTypeNosniff" json:"contentTypeNosniff"`
+				XFrameOptions         string   `yaml:"xFrameOptions" json:"xFrameOptions"`
+				HstsMaxAge            int      `yaml:"hstsMaxAge" json:"hstsMaxAge"`
+				HstsExcludeSubdomains bool     `yaml:"hstsExcludeSubdomains" json:"hstsExcludeSubdomains"`
+				HstsPreloadEnabled    bool     `yaml:"hstsPreloadEnabled" json:"hstsPreloadEnabled"`
+				ContentSecurityPolicy string   `yaml:"contentSecurityPolicy" json:"contentSecurityPolicy"`
+				CspReportOnly         bool     `yaml:"cspReportOnly" json:"cspReportOnly"`
+				ReferrerPolicy        string   `yaml:"referrerPolicy" json:"referrerPolicy"`
+			} `yaml:"secure" json:"secure"`
 			Gzip struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Level   string `yaml:"level" json:"level"`
@@ -523,6 +539,25 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			inters = append(inters, rkechojwt.Interceptor(opts...))
 		}
 
+		// Did we enabled secure interceptor?
+		if element.Interceptors.Secure.Enabled {
+			opts := []rkechosec.Option{
+				rkechosec.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechosec.WithXSSProtection(element.Interceptors.Secure.XssProtection),
+				rkechosec.WithContentTypeNosniff(element.Interceptors.Secure.ContentTypeNosniff),
+				rkechosec.WithXFrameOptions(element.Interceptors.Secure.XFrameOptions),
+				rkechosec.WithHSTSMaxAge(element.Interceptors.Secure.HstsMaxAge),
+				rkechosec.WithHSTSExcludeSubdomains(element.Interceptors.Secure.HstsExcludeSubdomains),
+				rkechosec.WithHSTSPreloadEnabled(element.Interceptors.Secure.HstsPreloadEnabled),
+				rkechosec.WithContentSecurityPolicy(element.Interceptors.Secure.ContentSecurityPolicy),
+				rkechosec.WithCSPReportOnly(element.Interceptors.Secure.CspReportOnly),
+				rkechosec.WithReferrerPolicy(element.Interceptors.Secure.ReferrerPolicy),
+				rkechosec.WithIgnorePrefix(element.Interceptors.Secure.IgnorePrefix...),
+			}
+
+			inters = append(inters, rkechosec.Interceptor(opts...))
+		}
+
 		// Did we enabled cors interceptor?
 		if element.Interceptors.Cors.Enabled {
 			opts := []rkechocors.Option{
@@ -864,9 +899,29 @@ func (entry *EchoEntry) String() string {
 // MarshalJSON Marshal entry.
 func (entry *EchoEntry) MarshalJSON() ([]byte, error) {
 	m := map[string]interface{}{
-		"entryName":        entry.EntryName,
-		"entryType":        entry.EntryType,
-		"entryDescription": entry.EntryDescription,
+		"entryName":          entry.EntryName,
+		"entryType":          entry.EntryType,
+		"entryDescription":   entry.EntryDescription,
+		"eventLoggerEntry":   entry.EventLoggerEntry.GetName(),
+		"zapLoggerEntry":     entry.ZapLoggerEntry.GetName(),
+		"port":               entry.Port,
+		"swEntry":            entry.SwEntry,
+		"commonServiceEntry": entry.CommonServiceEntry,
+		"promEntry":          entry.PromEntry,
+		"tvEntry":            entry.TvEntry,
+	}
+
+	if entry.CertEntry != nil {
+		m["certEntry"] = entry.CertEntry.GetName()
+	}
+
+	interceptorsStr := make([]string, 0)
+	m["interceptors"] = &interceptorsStr
+
+	for i := range entry.Interceptors {
+		element := entry.Interceptors[i]
+		interceptorsStr = append(interceptorsStr,
+			path.Base(runtime.FuncForPC(reflect.ValueOf(element).Pointer()).Name()))
 	}
 
 	return json.Marshal(&m)
