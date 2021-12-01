@@ -3,6 +3,7 @@
 // Use of this source code is governed by an Apache-style
 // license that can be found in the LICENSE file.
 
+// Package rkechosec is a middleware of echo framework for adding secure headers in RPC response
 package rkechosec
 
 import (
