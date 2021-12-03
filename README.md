@@ -26,6 +26,7 @@ Interceptor & bootstrapper designed for echo framework. Currently, supports bell
 | CORS interceptor | Server side CORS interceptor. |
 | JWT interceptor | Server side JWT interceptor. |
 | Secure interceptor | Server side secure interceptor. |
+| CSRF interceptor | Server side csrf interceptor. |
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -59,6 +60,7 @@ Interceptor & bootstrapper designed for echo framework. Currently, supports bell
     - [CORS](#cors)
     - [JWT](#jwt)
     - [Secure](#secure)
+    - [CSRF](#csrf)
   - [Development Status: Stable](#development-status-stable)
   - [Contributing](#contributing)
 
@@ -468,6 +470,20 @@ The supported scheme of **tokenLookup**
 | echo.interceptors.secure.cspReportOnly | Content-Security-Policy-Report-Only header value. | bool | false |
 | echo.interceptors.secure.referrerPolicy | Referrer-Policy header value. | string | "" |
 | echo.interceptors.secure.ignorePrefix | Ignoring path prefix. | []string | [] |
+
+#### CSRF
+| name | description | type | default value |
+| ------ | ------ | ------ | ------ |
+| echo.interceptors.csrf.enabled | Enable csrf interceptor | boolean | false |
+| echo.interceptors.csrf.tokenLength | Provide the length of the generated token. | int | 32 |
+| echo.interceptors.csrf.tokenLookup | Provide csrf token lookup rules, please see code comments for details. | string | "header:X-CSRF-Token" |
+| echo.interceptors.csrf.cookieName | Provide name of the CSRF cookie. This cookie will store CSRF token. | string | _csrf |
+| echo.interceptors.csrf.cookieDomain | Domain of the CSRF cookie. | string | "" |
+| echo.interceptors.csrf.cookiePath | Path of the CSRF cookie. | string | "" |
+| echo.interceptors.csrf.cookieMaxAge | Provide max age (in seconds) of the CSRF cookie. | int | 86400 |
+| echo.interceptors.csrf.cookieHttpOnly | Indicates if CSRF cookie is HTTP only. | bool | false |
+| echo.interceptors.csrf.cookieSameSite | Indicates SameSite mode of the CSRF cookie. Options: lax, strict, none, default | string | default |
+| echo.interceptors.csrf.ignorePrefix | Ignoring path prefix. | []string | [] |
 
 ### Development Status: Stable
 

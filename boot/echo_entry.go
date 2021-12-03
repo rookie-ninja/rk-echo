@@ -16,14 +16,15 @@ import (
 	"github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-echo/interceptor/auth"
 	"github.com/rookie-ninja/rk-echo/interceptor/cors"
+	"github.com/rookie-ninja/rk-echo/interceptor/csrf"
 	"github.com/rookie-ninja/rk-echo/interceptor/gzip"
-	rkechojwt "github.com/rookie-ninja/rk-echo/interceptor/jwt"
+	"github.com/rookie-ninja/rk-echo/interceptor/jwt"
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-echo/interceptor/meta"
 	"github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
 	"github.com/rookie-ninja/rk-echo/interceptor/panic"
 	"github.com/rookie-ninja/rk-echo/interceptor/ratelimit"
-	rkechosec "github.com/rookie-ninja/rk-echo/interceptor/secure"
+	"github.com/rookie-ninja/rk-echo/interceptor/secure"
 	"github.com/rookie-ninja/rk-echo/interceptor/timeout"
 	"github.com/rookie-ninja/rk-echo/interceptor/tracing/telemetry"
 	"github.com/rookie-ninja/rk-entry/entry"
@@ -157,6 +158,18 @@ type BootConfigEcho struct {
 				CspReportOnly         bool     `yaml:"cspReportOnly" json:"cspReportOnly"`
 				ReferrerPolicy        string   `yaml:"referrerPolicy" json:"referrerPolicy"`
 			} `yaml:"secure" json:"secure"`
+			Csrf struct {
+				Enabled        bool     `yaml:"enabled" json:"enabled"`
+				IgnorePrefix   []string `yaml:"ignorePrefix" json:"ignorePrefix"`
+				TokenLength    int      `yaml:"tokenLength" json:"tokenLength"`
+				TokenLookup    string   `yaml:"tokenLookup" json:"tokenLookup"`
+				CookieName     string   `yaml:"cookieName" json:"cookieName"`
+				CookieDomain   string   `yaml:"cookieDomain" json:"cookieDomain"`
+				CookiePath     string   `yaml:"cookiePath" json:"cookiePath"`
+				CookieMaxAge   int      `yaml:"cookieMaxAge" json:"cookieMaxAge"`
+				CookieHttpOnly bool     `yaml:"cookieHttpOnly" json:"cookieHttpOnly"`
+				CookieSameSite string   `yaml:"cookieSameSite" json:"cookieSameSite"`
+			} `yaml:"csrf" yaml:"csrf"`
 			Gzip struct {
 				Enabled bool   `yaml:"enabled" json:"enabled"`
 				Level   string `yaml:"level" json:"level"`
@@ -556,6 +569,39 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			}
 
 			inters = append(inters, rkechosec.Interceptor(opts...))
+		}
+
+		// Did we enabled csrf interceptor?
+		if element.Interceptors.Csrf.Enabled {
+			opts := []rkechocsrf.Option{
+				rkechocsrf.WithEntryNameAndType(element.Name, EchoEntryType),
+				rkechocsrf.WithTokenLength(element.Interceptors.Csrf.TokenLength),
+				rkechocsrf.WithTokenLookup(element.Interceptors.Csrf.TokenLookup),
+				rkechocsrf.WithCookieName(element.Interceptors.Csrf.CookieName),
+				rkechocsrf.WithCookieDomain(element.Interceptors.Csrf.CookieDomain),
+				rkechocsrf.WithCookiePath(element.Interceptors.Csrf.CookiePath),
+				rkechocsrf.WithCookieMaxAge(element.Interceptors.Csrf.CookieMaxAge),
+				rkechocsrf.WithCookieHTTPOnly(element.Interceptors.Csrf.CookieHttpOnly),
+				rkechocsrf.WithIgnorePrefix(element.Interceptors.Csrf.IgnorePrefix...),
+			}
+
+			// convert to string to cookie same sites
+			sameSite := http.SameSiteDefaultMode
+
+			switch strings.ToLower(element.Interceptors.Csrf.CookieSameSite) {
+			case "lax":
+				sameSite = http.SameSiteLaxMode
+			case "strict":
+				sameSite = http.SameSiteStrictMode
+			case "none":
+				sameSite = http.SameSiteNoneMode
+			default:
+				sameSite = http.SameSiteDefaultMode
+			}
+
+			opts = append(opts, rkechocsrf.WithCookieSameSite(sameSite))
+
+			inters = append(inters, rkechocsrf.Interceptor(opts...))
 		}
 
 		// Did we enabled cors interceptor?

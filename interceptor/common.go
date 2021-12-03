@@ -54,6 +54,8 @@ const (
 	RpcApiKeyHeaderKey = "X-API-Key"
 	// RpcJwtTokenKey key of jwt token in context
 	RpcJwtTokenKey = "echoJwt"
+	// RpcCsrfTokenKey key of csrf token injected by csrf middleware
+	RpcCsrfTokenKey = "echoCsrfToken"
 )
 
 // GetRemoteAddressSet returns remote endpoint information set including IP, Port.

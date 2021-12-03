@@ -231,3 +231,18 @@ func GetJwtToken(ctx echo.Context) *jwt.Token {
 
 	return nil
 }
+
+// GetCsrfToken return csrf token if exists
+func GetCsrfToken(ctx echo.Context) string {
+	if ctx == nil {
+		return ""
+	}
+
+	if raw := ctx.Get(rkechointer.RpcCsrfTokenKey); raw != nil {
+		if res, ok := raw.(string); ok {
+			return res
+		}
+	}
+
+	return ""
+}
