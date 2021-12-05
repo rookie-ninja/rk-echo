@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/labstack/echo/v4"
+	"github.com/markbates/pkger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rookie-ninja/rk-common/common"
@@ -34,7 +35,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strconv"
@@ -106,6 +109,7 @@ type BootConfigEcho struct {
 		CommonService BootConfigCommonService `yaml:"commonService" json:"commonService"`
 		TV            BootConfigTv            `yaml:"tv" json:"tv"`
 		Prom          BootConfigProm          `yaml:"prom" json:"prom"`
+		Static        BootConfigStaticHandler `yaml:"static" json:"static"`
 		Interceptors  struct {
 			LoggingZap struct {
 				Enabled                bool     `yaml:"enabled" json:"enabled"`
@@ -239,6 +243,7 @@ type EchoEntry struct {
 	Echo               *echo.Echo                `json:"-" yaml:"-"`
 	Interceptors       []echo.MiddlewareFunc     `json:"-" yaml:"-"`
 	PromEntry          *PromEntry                `json:"promEntry" yaml:"promEntry"`
+	StaticFileEntry    *StaticFileHandlerEntry   `json:"staticFileHandlerEntry" yaml:"staticFileHandlerEntry"`
 	TvEntry            *TvEntry                  `json:"tvEntry" yaml:"tvEntry"`
 }
 
@@ -316,6 +321,13 @@ func WithInterceptorsEcho(inters ...echo.MiddlewareFunc) EchoEntryOption {
 func WithPromEntryEcho(prom *PromEntry) EchoEntryOption {
 	return func(entry *EchoEntry) {
 		entry.PromEntry = prom
+	}
+}
+
+// WithStaticFileHandlerEntryEcho provide StaticFileHandlerEntry.
+func WithStaticFileHandlerEntryEcho(staticEntry *StaticFileHandlerEntry) EchoEntryOption {
+	return func(entry *EchoEntry) {
+		entry.StaticFileEntry = staticEntry
 	}
 }
 
@@ -714,6 +726,29 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 				WithEventLoggerEntryTv(eventLoggerEntry))
 		}
 
+		// DId we enabled static file handler?
+		var staticEntry *StaticFileHandlerEntry
+		if element.Static.Enabled {
+			var fs http.FileSystem
+			switch element.Static.SourceType {
+			case "pkger":
+				fs = pkger.Dir(element.Static.SourcePath)
+			case "local":
+				if !filepath.IsAbs(element.Static.SourcePath) {
+					wd, _ := os.Getwd()
+					element.Static.SourcePath = path.Join(wd, element.Static.SourcePath)
+				}
+				fs = http.Dir(element.Static.SourcePath)
+			}
+
+			staticEntry = NewStaticFileHandlerEntry(
+				WithZapLoggerEntryStatic(zapLoggerEntry),
+				WithEventLoggerEntryStatic(eventLoggerEntry),
+				WithNameStatic(fmt.Sprintf("%s-static", element.Name)),
+				WithPathStatic(element.Static.Path),
+				WithFileSystemStatic(fs))
+		}
+
 		certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.Cert.Ref)
 
 		entry := RegisterEchoEntry(
@@ -727,6 +762,7 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 			WithTVEntryEcho(tvEntry),
 			WithCommonServiceEntryEcho(commonServiceEntry),
 			WithSwEntryEcho(swEntry),
+			WithStaticFileHandlerEntryEcho(staticEntry),
 			WithInterceptorsEcho(inters...))
 
 		res[name] = entry
@@ -798,6 +834,21 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 
 		// Bootstrap swagger entry.
 		entry.SwEntry.Bootstrap(ctx)
+	}
+
+	// Is static file handler enabled?
+	if entry.IsStaticFileHandlerEnabled() {
+		// Register path into Router.
+		entry.Echo.GET(strings.TrimSuffix(entry.StaticFileEntry.Path, "/"), func(ctx echo.Context) error {
+			ctx.Redirect(http.StatusTemporaryRedirect, entry.StaticFileEntry.Path)
+			return nil
+		})
+
+		// Register path into Router.
+		entry.Echo.GET(path.Join(entry.StaticFileEntry.Path, "*"), entry.StaticFileEntry.GetFileHandler())
+
+		// Bootstrap entry.
+		entry.StaticFileEntry.Bootstrap(ctx)
 	}
 
 	// Is prometheus enabled?
@@ -894,6 +945,11 @@ func (entry *EchoEntry) Interrupt(ctx context.Context) {
 	if entry.IsSwEnabled() {
 		// Interrupt swagger entry
 		entry.SwEntry.Interrupt(ctx)
+	}
+
+	if entry.IsStaticFileHandlerEnabled() {
+		// Interrupt entry
+		entry.StaticFileEntry.Interrupt(ctx)
 	}
 
 	if entry.IsPromEnabled() {
@@ -1007,6 +1063,11 @@ func (entry *EchoEntry) IsTvEnabled() bool {
 // IsPromEnabled Is prometheus entry enabled?
 func (entry *EchoEntry) IsPromEnabled() bool {
 	return entry.PromEntry != nil
+}
+
+// IsStaticFileHandlerEnabled Is static file handler entry enabled?
+func (entry *EchoEntry) IsStaticFileHandlerEnabled() bool {
+	return entry.StaticFileEntry != nil
 }
 
 // Add basic fields into event.
