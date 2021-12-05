@@ -301,6 +301,8 @@ User can start multiple echo servers at the same time. Please make sure use diff
 - About [pkger](https://github.com/markbates/pkger)
 User can use pkger command line tool to embed static files into .go files.
 
+Please use sourcePath like: github.com/rookie-ninja/rk-echo:/boot/assets
+
 ### Interceptors
 #### Log
 | name | description | type | default value |
