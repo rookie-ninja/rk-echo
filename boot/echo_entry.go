@@ -1057,6 +1057,10 @@ func (entry *EchoEntry) logBasicInfo(operation string) (rkquery.Event, *zap.Logg
 		zap.String("eventId", event.GetEventId()),
 		zap.String("entryName", entry.EntryName))
 
+	// add general info
+	event.AddPayloads(
+		zap.Uint64("echoPort", entry.Port))
+
 	// add SwEntry info
 	if entry.IsSwEnabled() {
 		event.AddPayloads(
