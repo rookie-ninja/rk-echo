@@ -185,13 +185,13 @@ func main() {
 	echoEntry.Echo.GET("/v1/greeter", Greeter)
 
 	// Bootstrap echo entry
-	res["greeter"].Bootstrap(context.Background())
+	echoEntry.Bootstrap(context.Background())
 
 	// Wait for shutdown signal
 	rkentry.GlobalAppCtx.WaitForShutdownSig()
 
 	// Interrupt echo entry
-	res["greeter"].Interrupt(context.Background())
+	echoEntry.Interrupt(context.Background())
 }
 
 // @Summary Greeter service
@@ -786,6 +786,9 @@ echo:
 #        cookieHttpOnly: false                             # Optional, default: false
 #        cookieSameSite: "default"                         # Optional, default: "default", options: lax, strict, none, default
 #        ignorePrefix: []                                  # Optional, default: []
+#      gzip:
+#        enabled: true
+#        level: bestSpeed                                  # Optional, options: [noCompression, bestSpeed， bestCompression, defaultCompression, huffmanOnly]
 ```
 
 ## Development Status: Stable
