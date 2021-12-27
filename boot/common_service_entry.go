@@ -78,7 +78,7 @@ type BootConfigCommonService struct {
 type CommonServiceEntry struct {
 	EntryName        string                    `json:"entryName" yaml:"entryName"`
 	EntryType        string                    `json:"entryType" yaml:"entryType"`
-	EntryDescription string                    `json:"entryDescription" yaml:"entryDescription"`
+	EntryDescription string                    `json:"-" yaml:"-"`
 	EventLoggerEntry *rkentry.EventLoggerEntry `json:"-" yaml:"-"`
 	ZapLoggerEntry   *rkentry.ZapLoggerEntry   `json:"-" yaml:"-"`
 }

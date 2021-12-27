@@ -66,12 +66,12 @@ type BootConfigProm struct {
 // 7: Registerer        Prometheus registerer
 // 8: Gatherer          Prometheus gatherer
 type PromEntry struct {
-	Pusher           *rkprom.PushGatewayPusher `json:"pushGateWayPusher" yaml:"pushGateWayPusher"`
+	Pusher           *rkprom.PushGatewayPusher `json:"-" yaml:"-"`
 	EntryName        string                    `json:"entryName" yaml:"entryName"`
 	EntryType        string                    `json:"entryType" yaml:"entryType"`
-	EntryDescription string                    `json:"entryDescription" yaml:"entryDescription"`
-	ZapLoggerEntry   *rkentry.ZapLoggerEntry   `json:"zapLoggerEntry" yaml:"zapLoggerEntry"`
-	EventLoggerEntry *rkentry.EventLoggerEntry `json:"eventLoggerEntry" yaml:"eventLoggerEntry"`
+	EntryDescription string                    `json:"-" yaml:"-"`
+	ZapLoggerEntry   *rkentry.ZapLoggerEntry   `json:"-" yaml:"-"`
+	EventLoggerEntry *rkentry.EventLoggerEntry `json:"-" yaml:"-"`
 	Port             uint64                    `json:"port" yaml:"port"`
 	Path             string                    `json:"path" yaml:"path"`
 	Registry         *prometheus.Registry      `json:"-" yaml:"-"`
