@@ -786,6 +786,9 @@ echo:
 #        cookieHttpOnly: false                             # Optional, default: false
 #        cookieSameSite: "default"                         # Optional, default: "default", options: lax, strict, none, default
 #        ignorePrefix: []                                  # Optional, default: []
+#      gzip:
+#        enabled: true
+#        level: bestSpeed                                  # Optional, options: [noCompression, bestSpeed， bestCompression, defaultCompression, huffmanOnly]
 ```
 
 ## Development Status: Stable
