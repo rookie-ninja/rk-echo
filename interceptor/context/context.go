@@ -8,7 +8,7 @@ package rkechoctx
 
 import (
 	"context"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/interceptor"
 	"github.com/rookie-ninja/rk-logger"

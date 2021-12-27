@@ -3,7 +3,7 @@ module github.com/rookie-ninja/rk-echo
 go 1.16
 
 require (
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/juju/ratelimit v1.0.1
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/markbates/pkger v0.17.1
