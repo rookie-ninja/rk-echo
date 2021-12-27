@@ -12,7 +12,6 @@ import (
 	"github.com/markbates/pkger"
 	"github.com/rookie-ninja/rk-common/common"
 	"github.com/rookie-ninja/rk-entry/entry"
-	"github.com/rookie-ninja/rk-query"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
@@ -179,46 +178,12 @@ func NewSwEntry(opts ...SwOption) *SwEntry {
 
 // Bootstrap swagger entry.
 func (entry *SwEntry) Bootstrap(ctx context.Context) {
-	// No op
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"bootstrap",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	logger := entry.ZapLoggerEntry.GetLogger()
-
-	if raw := ctx.Value(bootstrapEventIdKey); raw != nil {
-		event.SetEventId(raw.(string))
-		logger = logger.With(zap.String("eventId", event.GetEventId()))
-	}
-
-	entry.logBasicInfo(event)
-
-	defer entry.EventLoggerEntry.GetEventHelper().Finish(event)
-
-	logger.Info("Bootstrapping SwEntry.", event.ListPayloads()...)
+	// Noop
 }
 
 // Interrupt swagger entry.
 func (entry *SwEntry) Interrupt(ctx context.Context) {
-	// No op
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"interrupt",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	logger := entry.ZapLoggerEntry.GetLogger()
-
-	if raw := ctx.Value(bootstrapEventIdKey); raw != nil {
-		event.SetEventId(raw.(string))
-		logger = logger.With(zap.String("eventId", event.GetEventId()))
-	}
-
-	entry.logBasicInfo(event)
-
-	defer entry.EventLoggerEntry.GetEventHelper().Finish(event)
-
-	logger.Info("Interrupting SwEntry.", event.ListPayloads()...)
+	// Noop
 }
 
 // GetName Get name of entry.
@@ -263,17 +228,6 @@ func (entry *SwEntry) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON Unmarshal entry
 func (entry *SwEntry) UnmarshalJSON([]byte) error {
 	return nil
-}
-
-// Add basic fields into event
-func (entry *SwEntry) logBasicInfo(event rkquery.Event) {
-	event.AddPayloads(
-		zap.String("entryName", entry.EntryName),
-		zap.String("entryType", entry.EntryType),
-		zap.String("jsonPath", entry.JsonPath),
-		zap.String("path", entry.Path),
-		zap.Uint64("port", entry.Port),
-	)
 }
 
 // AssetsFileHandler Handler for swagger assets files.

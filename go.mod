@@ -23,4 +23,5 @@ require (
 	go.opentelemetry.io/otel/trace v1.2.0
 	go.uber.org/ratelimit v0.2.0
 	go.uber.org/zap v1.16.0
+	golang.org/x/tools v0.1.7 // indirect
 )

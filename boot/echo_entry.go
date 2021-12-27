@@ -812,15 +812,7 @@ func RegisterEchoEntry(opts ...EchoEntryOption) *EchoEntry {
 
 // Bootstrap EchoEntry.
 func (entry *EchoEntry) Bootstrap(ctx context.Context) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"bootstrap",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	entry.logBasicInfo(event)
-
-	ctx = context.WithValue(context.Background(), bootstrapEventIdKey, event.GetEventId())
-	logger := entry.ZapLoggerEntry.GetLogger().With(zap.String("eventId", event.GetEventId()))
+	event, logger := entry.logBasicInfo("Bootstrap")
 
 	// Is swagger enabled?
 	if entry.IsSwEnabled() {
@@ -898,7 +890,6 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 	// Default interceptor should be at front
 	entry.Echo.Use(entry.Interceptors...)
 
-	logger.Info("Bootstrapping EchoEntry.", event.ListPayloads()...)
 	go func(echoEntry *EchoEntry) {
 		if entry.Echo != nil {
 			// If TLS was enabled, we need to load server certificate and key and start http server with ListenAndServeTLS()
@@ -930,17 +921,7 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 
 // Interrupt EchoEntry.
 func (entry *EchoEntry) Interrupt(ctx context.Context) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"interrupt",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	ctx = context.WithValue(context.Background(), bootstrapEventIdKey, event.GetEventId())
-	logger := entry.ZapLoggerEntry.GetLogger().With(zap.String("eventId", event.GetEventId()))
-
-	entry.logBasicInfo(event)
-
-	logger.Info("Interrupting EchoEntry.", event.ListPayloads()...)
+	event, logger := entry.logBasicInfo("Interrupt")
 
 	if entry.IsSwEnabled() {
 		// Interrupt swagger entry
@@ -1071,10 +1052,58 @@ func (entry *EchoEntry) IsStaticFileHandlerEnabled() bool {
 }
 
 // Add basic fields into event.
-func (entry *EchoEntry) logBasicInfo(event rkquery.Event) {
-	event.AddPayloads(
-		zap.String("entryName", entry.EntryName),
-		zap.String("entryType", entry.EntryType),
-		zap.Uint64("port", entry.Port),
-	)
+func (entry *EchoEntry) logBasicInfo(operation string) (rkquery.Event, *zap.Logger) {
+	event := entry.EventLoggerEntry.GetEventHelper().Start(
+		operation,
+		rkquery.WithEntryName(entry.GetName()),
+		rkquery.WithEntryType(entry.GetType()))
+	logger := entry.ZapLoggerEntry.GetLogger().With(
+		zap.String("eventId", event.GetEventId()),
+		zap.String("entryName", entry.EntryName))
+
+	// add SwEntry info
+	if entry.IsSwEnabled() {
+		event.AddPayloads(
+			zap.Bool("swEnabled", true),
+			zap.String("swPath", entry.SwEntry.Path))
+	}
+
+	// add CommonServiceEntry info
+	if entry.IsCommonServiceEnabled() {
+		event.AddPayloads(
+			zap.Bool("commonServiceEnabled", true),
+			zap.String("commonServicePathPrefix", "/rk/v1/"))
+	}
+
+	// add TvEntry info
+	if entry.IsTvEnabled() {
+		event.AddPayloads(
+			zap.Bool("tvEnabled", true),
+			zap.String("tvPath", "/rk/v1/tv/"))
+	}
+
+	// add PromEntry info
+	if entry.IsPromEnabled() {
+		event.AddPayloads(
+			zap.Bool("promEnabled", true),
+			zap.Uint64("promPort", entry.PromEntry.Port),
+			zap.String("promPath", entry.PromEntry.Path))
+	}
+
+	// add StaticFileHandlerEntry info
+	if entry.IsStaticFileHandlerEnabled() {
+		event.AddPayloads(
+			zap.Bool("staticFileHandlerEnabled", true),
+			zap.String("staticFileHandlerPath", entry.StaticFileEntry.Path))
+	}
+
+	// add tls info
+	if entry.IsTlsEnabled() {
+		event.AddPayloads(
+			zap.Bool("tlsEnabled", true))
+	}
+
+	logger.Info(fmt.Sprintf("%s echoEntry", operation))
+
+	return event, logger
 }

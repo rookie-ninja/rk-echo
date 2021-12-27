@@ -14,9 +14,8 @@ import (
 	"github.com/markbates/pkger"
 	"github.com/markbates/pkger/pkging"
 	"github.com/rookie-ninja/rk-common/common"
-	rkechoctx "github.com/rookie-ninja/rk-echo/interceptor/context"
+	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	"github.com/rookie-ninja/rk-entry/entry"
-	"github.com/rookie-ninja/rk-query"
 	"go.uber.org/zap"
 	"html/template"
 	"io/ioutil"
@@ -183,56 +182,19 @@ func (entry *TvEntry) AssetsFileHandler() echo.HandlerFunc {
 // 16: license.tmpl
 // 17: info.tmpl
 func (entry *TvEntry) Bootstrap(ctx context.Context) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"bootstrap",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	logger := entry.ZapLoggerEntry.GetLogger()
-
-	if raw := ctx.Value(bootstrapEventIdKey); raw != nil {
-		event.SetEventId(raw.(string))
-		logger = logger.With(zap.String("eventId", event.GetEventId()))
-	}
-
-	entry.logBasicInfo(event)
-
-	event.AddPayloads(zap.String("path", "/rk/v1/tv/*item"))
-
 	entry.Template = template.New("rk-tv")
 
 	// Parse templates
-	for k, v := range Templates {
+	for _, v := range Templates {
 		if _, err := entry.Template.Parse(string(v)); err != nil {
-			entry.EventLoggerEntry.GetEventHelper().FinishWithError(event, err)
-			entry.ZapLoggerEntry.GetLogger().Error(fmt.Sprintf("Error occurs while parsing %s template.", k))
 			rkcommon.ShutdownWithError(err)
 		}
 	}
-
-	logger.Info("Bootstrapping tvEntry.", event.ListPayloads()...)
-
-	entry.EventLoggerEntry.GetEventHelper().Finish(event)
 }
 
 // Interrupt TV entry.
 func (entry *TvEntry) Interrupt(ctx context.Context) {
-	event := entry.EventLoggerEntry.GetEventHelper().Start(
-		"interrupt",
-		rkquery.WithEntryName(entry.EntryName),
-		rkquery.WithEntryType(entry.EntryType))
-
-	logger := entry.ZapLoggerEntry.GetLogger()
-	if raw := ctx.Value(bootstrapEventIdKey); raw != nil {
-		event.SetEventId(raw.(string))
-		logger = logger.With(zap.String("eventId", event.GetEventId()))
-	}
-
-	entry.logBasicInfo(event)
-
-	defer entry.EventLoggerEntry.GetEventHelper().Finish(event)
-
-	logger.Info("Interrupting TvEntry.", event.ListPayloads()...)
+	// Noop
 }
 
 // GetName Get name of entry.
@@ -272,14 +234,6 @@ func (entry *TvEntry) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON Not supported.
 func (entry *TvEntry) UnmarshalJSON([]byte) error {
 	return nil
-}
-
-// Add basic fields into event.
-func (entry *TvEntry) logBasicInfo(event rkquery.Event) {
-	event.AddPayloads(
-		zap.String("entryName", entry.EntryName),
-		zap.String("entryType", entry.EntryType),
-	)
 }
 
 // TV handler
