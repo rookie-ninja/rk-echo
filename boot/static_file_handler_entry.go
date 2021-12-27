@@ -87,7 +87,7 @@ type BootConfigStaticHandler struct {
 type StaticFileHandlerEntry struct {
 	EntryName        string                    `yaml:"entryName" json:"entryName"`
 	EntryType        string                    `yaml:"entryType" json:"entryType"`
-	EntryDescription string                    `yaml:"entryDescription" json:"entryDescription"`
+	EntryDescription string                    `yaml:"-" json:"-"`
 	Path             string                    `yaml:"path" json:"path"`
 	EventLoggerEntry *rkentry.EventLoggerEntry `json:"-" yaml:"-"`
 	ZapLoggerEntry   *rkentry.ZapLoggerEntry   `json:"-" yaml:"-"`

@@ -52,10 +52,6 @@ const (
 	EchoEntryDescription = "Internal RK entry which helps to bootstrap with Echo framework."
 )
 
-var bootstrapEventIdKey = eventIdKey{}
-
-type eventIdKey struct{}
-
 // This must be declared in order to register registration function into rk context
 // otherwise, rk-boot won't able to bootstrap echo entry automatically from boot config file
 func init() {
@@ -233,18 +229,18 @@ type BootConfigEcho struct {
 type EchoEntry struct {
 	EntryName          string                    `json:"entryName" yaml:"entryName"`
 	EntryType          string                    `json:"entryType" yaml:"entryType"`
-	EntryDescription   string                    `json:"entryDescription" yaml:"entryDescription"`
-	ZapLoggerEntry     *rkentry.ZapLoggerEntry   `json:"zapLoggerEntry" yaml:"zapLoggerEntry"`
-	EventLoggerEntry   *rkentry.EventLoggerEntry `json:"eventLoggerEntry" yaml:"eventLoggerEntry"`
+	EntryDescription   string                    `json:"-" yaml:"-"`
+	ZapLoggerEntry     *rkentry.ZapLoggerEntry   `json:"-" yaml:"-"`
+	EventLoggerEntry   *rkentry.EventLoggerEntry `json:"-" yaml:"-"`
 	Port               uint64                    `json:"port" yaml:"port"`
-	CertEntry          *rkentry.CertEntry        `json:"certEntry" yaml:"certEntry"`
-	SwEntry            *SwEntry                  `json:"swEntry" yaml:"swEntry"`
-	CommonServiceEntry *CommonServiceEntry       `json:"commonServiceEntry" yaml:"commonServiceEntry"`
+	CertEntry          *rkentry.CertEntry        `json:"-" yaml:"-"`
+	SwEntry            *SwEntry                  `json:"-" yaml:"-"`
+	CommonServiceEntry *CommonServiceEntry       `json:"-" yaml:"-"`
 	Echo               *echo.Echo                `json:"-" yaml:"-"`
 	Interceptors       []echo.MiddlewareFunc     `json:"-" yaml:"-"`
-	PromEntry          *PromEntry                `json:"promEntry" yaml:"promEntry"`
-	StaticFileEntry    *StaticFileHandlerEntry   `json:"staticFileHandlerEntry" yaml:"staticFileHandlerEntry"`
-	TvEntry            *TvEntry                  `json:"tvEntry" yaml:"tvEntry"`
+	PromEntry          *PromEntry                `json:"-" yaml:"-"`
+	StaticFileEntry    *StaticFileHandlerEntry   `json:"-" yaml:"-"`
+	TvEntry            *TvEntry                  `json:"-" yaml:"-"`
 }
 
 // EchoEntryOption Echo entry option.

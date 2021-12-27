@@ -69,12 +69,12 @@ type BootConfigSw struct {
 type SwEntry struct {
 	EntryName           string                    `json:"entryName" yaml:"entryName"`
 	EntryType           string                    `json:"entryType" yaml:"entryType"`
-	EntryDescription    string                    `json:"entryDescription" yaml:"entryDescription"`
-	EventLoggerEntry    *rkentry.EventLoggerEntry `json:"eventLoggerEntry" yaml:"eventLoggerEntry"`
-	ZapLoggerEntry      *rkentry.ZapLoggerEntry   `json:"zapLoggerEntry" yaml:"zapLoggerEntry"`
+	EntryDescription    string                    `json:"-" yaml:"-"`
+	EventLoggerEntry    *rkentry.EventLoggerEntry `json:"-" yaml:"-"`
+	ZapLoggerEntry      *rkentry.ZapLoggerEntry   `json:"-" yaml:"-"`
 	JsonPath            string                    `json:"jsonPath" yaml:"jsonPath"`
 	Path                string                    `json:"path" yaml:"path"`
-	Headers             map[string]string         `json:"headers" yaml:"headers"`
+	Headers             map[string]string         `json:"-" yaml:"-"`
 	Port                uint64                    `json:"port" yaml:"port"`
 	EnableCommonService bool                      `json:"enableCommonService" yaml:"enableCommonService"`
 }
