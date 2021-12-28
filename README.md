@@ -8,7 +8,7 @@ Interceptor & bootstrapper designed for [labstack/echo](https://github.com/labst
 
 This belongs to [rk-boot](https://github.com/rookie-ninja/rk-boot) family. We suggest use this lib from [rk-boot](https://github.com/rookie-ninja/rk-boot).
 
-![image](img/boot-arch.png)
+![image](docs/img/boot-arch.png)
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
@@ -62,7 +62,7 @@ This belongs to [rk-boot](https://github.com/rookie-ninja/rk-boot) family. We su
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Architecture
-![image](img/echo-arch.png)
+![image](docs/img/echo-arch.png)
 
 ## Supported bootstrap
 | Bootstrap | Description |
@@ -354,7 +354,7 @@ Prometheus client will automatically register into [labstack/echo](https://githu
 
 Access [http://localhost:8080/metrics](http://localhost:8080/metrics)
 
-![image](img/prom-inter.png)
+![image](docs/img/prom-inter.png)
 
 ## YAML Options
 User can start multiple [labstack/echo](https://github.com/labstack/echo) instances at the same time. Please make sure use different port and name.
