@@ -12,6 +12,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	rkechocors "github.com/rookie-ninja/rk-echo/interceptor/cors"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidcors "github.com/rookie-ninja/rk-entry/middleware/cors"
 	"net/http"
 )
 
@@ -31,25 +32,22 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		rkechocors.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkechocors.WithEntryNameAndType("greeter", "echo"),
-			// Provide skipper function
-			// rkechocors.WithSkipper(func(e echo.Context) bool {
-			//     return false
-			// }),
+			rkmidcors.WithEntryNameAndType("greeter", "echo"),
+			//rkmidcors.WithIgnorePrefix("/v1/greeter"),
 			// Bellow section is for CORS policy.
 			// Please refer https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS for details.
 			// Provide allowed origins
-			rkechocors.WithAllowOrigins("http://localhost:*"),
+			rkmidcors.WithAllowOrigins("http://localhost:*"),
 			// Whether to allow credentials
-			// rkechocors.WithAllowCredentials(true),
+			// rkmidcors.WithAllowCredentials(true),
 			// Provide expose headers
-			// rkechocors.WithExposeHeaders(""),
+			// rkmidcors.WithExposeHeaders(""),
 			// Provide max age
-			// rkechocors.WithMaxAge(1),
+			// rkmidcors.WithMaxAge(1),
 			// Provide allowed headers
-			// rkechocors.WithAllowHeaders(""),
+			// rkmidcors.WithAllowHeaders(""),
 			// Provide allowed headers
-			// rkechocors.WithAllowMethods(""),
+			// rkmidcors.WithAllowMethods(""),
 		),
 	}
 

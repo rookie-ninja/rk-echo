@@ -58,13 +58,14 @@ Meta interceptor is only available on server side. The interceptor will send bel
 - X-RK-App-Version: Retrieved from [rkentry.GlobalAppCtx.GetAppInfoEntry().Version](https://github.com/rookie-ninja/rk-entry#appinfoentry)
 - X-RK-Unix-Time: Server time when request arrives.
 - X-RK-Received-Time: Server time when request arrives.
+- X-RK-Locale: Environment variables for REALM::REGION::AZ::DOMAIN
 
 ![arch](img/arch.png)
 
 | Name | Description | Default Values |
 | ---- | ---- | ---- |
-| rkechometa.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | echo, echo |
-| rkechometa.WithPrefix(prefix string) | Provide prefix of meta header | RK |
+| rkmidmeta.WithEntryNameAndType(entryName, entryType string) | Provide entry name and type if there are multiple meta interceptors needs to be used. | gin, gin |
+| rkmidmeta.WithPrefix(prefix string) | Provide prefix of meta header | RK |
 
 ```go
     // ********************************************
@@ -73,10 +74,10 @@ Meta interceptor is only available on server side. The interceptor will send bel
 	interceptors := []echo.MiddlewareFunc{
         rkechometa.Interceptor(
             // Entry name and entry type will be used for distinguishing interceptors. Recommended.
-            // rkechometa.WithEntryNameAndType("greeter", "echo"),
+            // rkmidmeta.WithEntryNameAndType("greeter", "gin"),
             //
             // We will replace X-<Prefix>-XXX with prefix user provided.
-            // rkechometa.WithPrefix("Dog"),
+            // rkmidmeta.WithPrefix("Dog"),
         ),
     }
 ```

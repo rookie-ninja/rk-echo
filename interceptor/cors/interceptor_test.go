@@ -5,14 +5,16 @@
 package rkechocors
 
 import (
+	"bytes"
 	"github.com/labstack/echo/v4"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidcors "github.com/rookie-ninja/rk-entry/middleware/cors"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
-
-const originHeaderValue = "http://ut-origin"
 
 var userHandler = func(ctx echo.Context) error {
 	return ctx.String(http.StatusOK, "")
@@ -21,125 +23,32 @@ var userHandler = func(ctx echo.Context) error {
 func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	// with skipper
-	ctx := newCtx(http.MethodGet)
-	handler := Interceptor(WithSkipper(func(context echo.Context) bool {
-		return true
-	}))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, ctx.Response().Status)
+	beforeCtx := rkmidcors.NewBeforeCtx()
+	beforeCtx.Output.HeadersToReturn["key"] = "value"
+	beforeCtx.Output.HeaderVary = []string{"vary"}
+	mock := rkmidcors.NewOptionSetMock(beforeCtx)
 
-	// with empty option, all request will be passed
-	ctx = newCtx(http.MethodGet)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, ctx.Response().Status)
+	// case 1: abort
+	inter := Interceptor(rkmidcors.WithMockOptionSet(mock))
+	ctx, w := newCtx()
+	beforeCtx.Output.Abort = true
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.Equal(t, "value", w.Header().Get("key"))
+	assert.Equal(t, "vary", w.Header().Get(rkmid.HeaderVary))
 
-	// match 1.1
-	ctx = newCtx(http.MethodGet)
-	ctx.Request().Header.Del(echo.HeaderOrigin)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, ctx.Response().Status)
-
-	// match 1.2
-	ctx = newCtx(http.MethodOptions)
-	ctx.Request().Header.Del(echo.HeaderOrigin)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
-
-	// match 2
-	ctx = newCtx(http.MethodOptions)
-	handler = Interceptor(WithAllowOrigins("http://do-not-pass-through"))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
-
-	// match 3
-	ctx = newCtx(http.MethodGet)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, ctx.Response().Status)
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-
-	// match 3.1
-	ctx = newCtx(http.MethodGet)
-	handler = Interceptor(WithAllowCredentials(true))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, ctx.Response().Status)
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-	assert.Equal(t, "true", ctx.Response().Header().Get(echo.HeaderAccessControlAllowCredentials))
-
-	// match 3.2
-	ctx = newCtx(http.MethodGet)
-	handler = Interceptor(
-		WithAllowCredentials(true),
-		WithExposeHeaders("expose"))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, ctx.Response().Status)
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-	assert.Equal(t, "true", ctx.Response().Header().Get(echo.HeaderAccessControlAllowCredentials))
-	assert.Equal(t, "expose", ctx.Response().Header().Get(echo.HeaderAccessControlExposeHeaders))
-
-	// match 4
-	ctx = newCtx(http.MethodOptions)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
-	assert.Equal(t, []string{
-		echo.HeaderAccessControlRequestMethod,
-		echo.HeaderAccessControlRequestHeaders,
-	}, ctx.Response().Header().Values(echo.HeaderVary))
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-	assert.NotEmpty(t, ctx.Response().Header().Get(echo.HeaderAccessControlAllowMethods))
-
-	// match 4.1
-	ctx = newCtx(http.MethodOptions)
-	handler = Interceptor(WithAllowCredentials(true))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
-	assert.Equal(t, []string{
-		echo.HeaderAccessControlRequestMethod,
-		echo.HeaderAccessControlRequestHeaders,
-	}, ctx.Response().Header().Values(echo.HeaderVary))
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-	assert.NotEmpty(t, ctx.Response().Header().Get(echo.HeaderAccessControlAllowMethods))
-	assert.Equal(t, "true", ctx.Response().Header().Get(echo.HeaderAccessControlAllowCredentials))
-
-	// match 4.2
-	ctx = newCtx(http.MethodOptions)
-	handler = Interceptor(WithAllowHeaders("ut-header"))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
-	assert.Equal(t, []string{
-		echo.HeaderAccessControlRequestMethod,
-		echo.HeaderAccessControlRequestHeaders,
-	}, ctx.Response().Header().Values(echo.HeaderVary))
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-	assert.NotEmpty(t, ctx.Response().Header().Get(echo.HeaderAccessControlAllowMethods))
-	assert.Equal(t, "ut-header", ctx.Response().Header().Get(echo.HeaderAccessControlAllowHeaders))
-
-	// match 4.3
-	ctx = newCtx(http.MethodOptions)
-	handler = Interceptor(WithMaxAge(1))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusNoContent, ctx.Response().Status)
-	assert.Equal(t, []string{
-		echo.HeaderAccessControlRequestMethod,
-		echo.HeaderAccessControlRequestHeaders,
-	}, ctx.Response().Header().Values(echo.HeaderVary))
-	assert.Equal(t, originHeaderValue, ctx.Response().Header().Get(echo.HeaderAccessControlAllowOrigin))
-	assert.NotEmpty(t, ctx.Response().Header().Get(echo.HeaderAccessControlAllowMethods))
-	assert.Equal(t, "1", ctx.Response().Header().Get(echo.HeaderAccessControlMaxAge))
+	// case 2: happy case
+	ctx, w = newCtx()
+	beforeCtx.Output.Abort = false
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func newCtx(method string) echo.Context {
-	req := httptest.NewRequest(method, "/ut-path", nil)
-	req.Header = http.Header{}
-	req.Header.Set(echo.HeaderOrigin, originHeaderValue)
-
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
 	resp := httptest.NewRecorder()
-	return echo.New().NewContext(req, resp)
+	return echo.New().NewContext(req, resp), resp
 }
 
 func assertNotPanic(t *testing.T) {
@@ -150,4 +59,8 @@ func assertNotPanic(t *testing.T) {
 		// This should never be called in case of a bug
 		assert.True(t, true)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

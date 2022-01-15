@@ -12,6 +12,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	"github.com/rookie-ninja/rk-echo/interceptor/csrf"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidcsrf "github.com/rookie-ninja/rk-entry/middleware/csrf"
 	"net/http"
 )
 
@@ -31,16 +32,11 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		rkechocsrf.Interceptor(
 			// Required, entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkechocsrf.WithEntryNameAndType("greeter", "echo"),
-			//
-			// Optional, provide skipper function
-			//rkechocsrf.WithSkipper(func(e echo.Context) bool {
-			//	return true
-			//}),
-			//
+			rkmidcsrf.WithEntryNameAndType("greeter", "echo"),
+			// rkmidcsrf.WithIgnorePrefix(""),
 			// WithTokenLength the length of the generated token.
 			// Optional. Default value 32.
-			//rkechocsrf.WithTokenLength(10),
+			//rkmidcsrf.WithTokenLength(10),
 			//
 			// WithTokenLookup a string in the form of "<source>:<key>" that is used
 			// to extract token from the request.
@@ -50,31 +46,31 @@ func main() {
 			// - "form:<name>"
 			// - "query:<name>"
 			// Optional. Default value "header:X-CSRF-Token".
-			//rkechocsrf.WithTokenLookup("header:X-CSRF-Token"),
+			//rkmidcsrf.WithTokenLookup("header:X-CSRF-Token"),
 			//
 			// WithCookieName provide name of the CSRF cookie. This cookie will store CSRF token.
 			// Optional. Default value "csrf".
-			//rkechocsrf.WithCookieName("csrf"),
+			//rkmidcsrf.WithCookieName("csrf"),
 			//
 			// WithCookieDomain provide domain of the CSRF cookie.
 			// Optional. Default value "".
-			//rkechocsrf.WithCookieDomain(""),
+			//rkmidcsrf.WithCookieDomain(""),
 			//
 			// WithCookiePath provide path of the CSRF cookie.
 			// Optional. Default value "".
-			//rkechocsrf.WithCookiePath(""),
+			//rkmidcsrf.WithCookiePath(""),
 			//
 			// WithCookieMaxAge provide max age (in seconds) of the CSRF cookie.
 			// Optional. Default value 86400 (24hr).
-			//rkechocsrf.WithCookieMaxAge(10),
+			//rkmidcsrf.WithCookieMaxAge(10),
 			//
 			// WithCookieHTTPOnly indicates if CSRF cookie is HTTP only.
 			// Optional. Default value false.
-			//rkechocsrf.WithCookieHTTPOnly(false),
+			//rkmidcsrf.WithCookieHTTPOnly(false),
 			//
 			// WithCookieSameSite indicates SameSite mode of the CSRF cookie.
 			// Optional. Default value SameSiteDefaultMode.
-			//rkechocsrf.WithCookieSameSite(http.SameSiteStrictMode),
+			//rkmidcsrf.WithCookieSameSite(http.SameSiteStrictMode),
 		),
 	}
 

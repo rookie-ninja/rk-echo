@@ -8,36 +8,26 @@ package rkechometrics
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-echo/interceptor"
-	"time"
+	"github.com/rookie-ninja/rk-entry/middleware"
+	"github.com/rookie-ninja/rk-entry/middleware/metrics"
+	"strconv"
 )
 
 // Interceptor create a new prometheus metrics interceptor with options.
-func Interceptor(opts ...Option) echo.MiddlewareFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidmetrics.Option) echo.MiddlewareFunc {
+	set := rkmidmetrics.NewOptionSet(opts...)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			ctx.Set(rkechointer.RpcEntryNameKey, set.EntryName)
+			ctx.Set(rkmid.EntryNameKey.String(), set.GetEntryName())
 
-			// start timer
-			startTime := time.Now()
+			beforeCtx := set.BeforeCtx(ctx.Request())
+			set.Before(beforeCtx)
 
 			err := next(ctx)
 
-			// end timer
-			elapsed := time.Now().Sub(startTime)
-
-			// ignoring /rk/v1/assets, /rk/v1/tv and /sw/ path while logging since these are internal APIs.
-			if rkechointer.ShouldLog(ctx) {
-				if durationMetrics := GetServerDurationMetrics(ctx); durationMetrics != nil {
-					durationMetrics.Observe(float64(elapsed.Nanoseconds()))
-				}
-
-				if resCodeMetrics := GetServerResCodeMetrics(ctx); resCodeMetrics != nil {
-					resCodeMetrics.Inc()
-				}
-			}
+			afterCtx := set.AfterCtx(strconv.Itoa(ctx.Response().Status))
+			set.After(beforeCtx, afterCtx)
 
 			return err
 		}

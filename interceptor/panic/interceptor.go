@@ -7,43 +7,29 @@
 package rkechopanic
 
 import (
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-common/error"
-	"github.com/rookie-ninja/rk-echo/interceptor"
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
-	"go.uber.org/zap"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidpanic "github.com/rookie-ninja/rk-entry/middleware/panic"
 	"net/http"
-	"runtime/debug"
 )
 
 // Interceptor returns a echo.MiddlewareFunc (middleware)
-func Interceptor(opts ...Option) echo.MiddlewareFunc {
-	set := newOptionSet(opts...)
+func Interceptor(opts ...rkmidpanic.Option) echo.MiddlewareFunc {
+	set := rkmidpanic.NewOptionSet(opts...)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			ctx.Set(rkechointer.RpcEntryNameKey, set.EntryName)
+			ctx.Set(rkmid.EntryNameKey.String(), set.GetEntryName())
 
-			defer func() {
-				if recv := recover(); recv != nil {
-					var res *rkerror.ErrorResp
+			handlerFunc := func(resp *rkerror.ErrorResp) {
+				ctx.JSON(http.StatusInternalServerError, resp)
+			}
+			beforeCtx := set.BeforeCtx(rkechoctx.GetEvent(ctx), rkechoctx.GetLogger(ctx), handlerFunc)
+			set.Before(beforeCtx)
 
-					if se, ok := recv.(*rkerror.ErrorResp); ok {
-						res = se
-					} else if re, ok := recv.(error); ok {
-						res = rkerror.FromError(re)
-					} else {
-						res = rkerror.New(rkerror.WithMessage(fmt.Sprintf("%v", recv)))
-					}
-
-					rkechoctx.GetEvent(ctx).SetCounter("panic", 1)
-					rkechoctx.GetEvent(ctx).AddErr(res.Err)
-					rkechoctx.GetLogger(ctx).Error(fmt.Sprintf("panic occurs:\n%s", string(debug.Stack())), zap.Error(res.Err))
-
-					ctx.JSON(http.StatusInternalServerError, res)
-				}
-			}()
+			defer beforeCtx.Output.DeferFunc()
 
 			return next(ctx)
 		}

@@ -6,33 +6,36 @@
 package rkechopanic
 
 import (
+	"bytes"
+	"errors"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-var defaultMiddlewareFunc = func(context echo.Context) error {
-	return nil
-}
-
-func newCtx() echo.Context {
-	return echo.New().NewContext(
-		httptest.NewRequest(http.MethodGet, "/ut-path", nil),
-		httptest.NewRecorder())
+var userHandler = func(ctx echo.Context) error {
+	panic(errors.New("ut panic"))
 }
 
 func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"))
-	ctx := newCtx()
+	inter := Interceptor()
+	ctx, _ := newCtx()
 
-	f := handler(defaultMiddlewareFunc)
+	f := inter(userHandler)
 
 	assert.Nil(t, f(ctx))
+}
+
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
+	resp := httptest.NewRecorder()
+	return echo.New().NewContext(req, resp), resp
 }
 
 func assertNotPanic(t *testing.T) {
@@ -43,4 +46,8 @@ func assertNotPanic(t *testing.T) {
 		// This should never be called in case of a bug
 		assert.True(t, true)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

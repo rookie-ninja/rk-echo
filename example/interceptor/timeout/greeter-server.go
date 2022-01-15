@@ -35,14 +35,14 @@ func main() {
 		rkecholog.Interceptor(),
 		rkechotimeout.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		//rkechotimeout.WithEntryNameAndType("greeter", "echo"),
+		// rkmidtimeout.WithEntryNameAndType("greeter", "gin"),
 		//
 		// Provide timeout and response handler, a default one would be assigned with http.StatusRequestTimeout
 		// This option impact all routes
-		//rkechotimeout.WithTimeoutAndResp(time.Second, nil),
+		//rkmidtimeout.WithTimeout(time.Second),
 		//
 		// Provide timeout and response handler by path, a default one would be assigned with http.StatusRequestTimeout
-		//rkechotimeout.WithTimeoutAndRespByPath("/rk/v1/healthy", time.Second, nil),
+		//rkmidtimeout.WithTimeoutByPath("/rk/v1/healthy", time.Second),
 		),
 	}
 

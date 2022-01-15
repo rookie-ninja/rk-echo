@@ -32,29 +32,28 @@ func main() {
 		rkecholog.Interceptor(),
 		rkecholimit.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		//rkechometa.WithEntryNameAndType("greeter", "echo"),
+		// rkmidlimit.WithEntryNameAndType("greeter", "echo"),
 		//
-		// Provide algorithm, rkecholimit.LeakyBucket and rkecholimit.TokenBucket was available, default is TokenBucket.
-		//rkecholimit.WithAlgorithm(rkecholimit.LeakyBucket),
+		// Provide algorithm, rkmidlimit.LeakyBucket and rkmidlimit.TokenBucket was available, default is TokenBucket.
+		//rkmidlimit.WithAlgorithm(rkmidlimit.LeakyBucket),
 		//
 		// Provide request per second, if provide value of zero, then no requests will be pass through and user will receive an error with
 		// resource exhausted.
-		//rkecholimit.WithReqPerSec(10),
+		//rkmidlimit.WithReqPerSec(10),
 		//
 		// Provide request per second with path name.
 		// The name should be full path name. if provide value of zero,
 		// then no requests will be pass through and user will receive an error with resource exhausted.
-		//rkecholimit.WithReqPerSecByPath("/rk/v1/greeter", 10),
+		//rkmidlimit.WithReqPerSecByPath("/rk/v1/greeter", 0),
 		//
-		// Provide user function of limiter. Returns error if you want to limit the request.
-		// Please do not try to set response code since it will be overridden by middleware.
-		//rkecholimit.WithGlobalLimiter(func(ctx echo.Context) error {
-		//	return fmt.Errorf("limited by custom limiter")
+		// Provide user function of limiter
+		//rkmidlimit.WithGlobalLimiter(func() error {
+		//	 return nil
 		//}),
 		//
 		// Provide user function of limiter by path name.
 		// The name should be full path name.
-		//rkecholimit.WithLimiterByPath("/rk/v1/greeter", func(ctx echo.Context) error {
+		//rkmidlimit.WithLimiterByPath("/rk/v1/greeter", func() error {
 		//	 return nil
 		//}),
 		),

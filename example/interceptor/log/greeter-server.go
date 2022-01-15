@@ -12,6 +12,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidlog "github.com/rookie-ninja/rk-entry/middleware/log"
 	"net/http"
 )
 
@@ -24,20 +25,20 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		//rkechometa.Interceptor(),
 		rkecholog.Interceptor(
-		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		// rkecholog.WithEntryNameAndType("greeter", "echo"),
-		//
-		// Zap logger would be logged as JSON format.
-		//rkecholog.WithZapLoggerEncoding(rkecholog.ENCODING_JSON),
-		//
-		// Event logger would be logged as JSON format.
-		//rkecholog.WithEventLoggerEncoding(rkecholog.ENCODING_JSON),
-		//
-		// Zap logger would be logged to specified path.
-		//rkecholog.WithZapLoggerOutputPaths("logs/server-zap.log"),
-		//
-		// Event logger would be logged to specified path.
-		//rkecholog.WithEventLoggerOutputPaths("logs/server-event.log"),
+			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
+			rkmidlog.WithEntryNameAndType("greeter", "echo"),
+			//
+			// Zap logger would be logged as JSON format.
+			// rkmidlog.WithZapLoggerEncoding("json"),
+			//
+			// Event logger would be logged as JSON format.
+			// rkmidlog.WithEventLoggerEncoding("json"),
+			//
+			// Zap logger would be logged to specified path.
+			// rkmidlog.WithZapLoggerOutputPaths("logs/server-zap.log"),
+			//
+			// Event logger would be logged to specified path.
+			// rkmidlog.WithEventLoggerOutputPaths("logs/server-event.log"),
 		),
 	}
 

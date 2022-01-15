@@ -11,6 +11,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	rkechosec "github.com/rookie-ninja/rk-echo/interceptor/secure"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidsec "github.com/rookie-ninja/rk-entry/middleware/secure"
 	"net/http"
 )
 
@@ -30,43 +31,43 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		rkechosec.Interceptor(
 			// Required, entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkechosec.WithEntryNameAndType("greeter", "echo"),
+			rkmidsec.WithEntryNameAndType("greeter", "echo"),
 			//
 			// X-XSS-Protection header value.
 			// Optional. Default value "1; mode=block".
-			//rkechosec.WithXSSProtection("my-value"),
+			//rkmidsec.WithXSSProtection("my-value"),
 			//
 			// X-Content-Type-Options header value.
 			// Optional. Default value "nosniff".
-			//rkechosec.WithContentTypeNosniff("my-value"),
+			//rkmidsec.WithContentTypeNosniff("my-value"),
 			//
 			// X-Frame-Options header value.
 			// Optional. Default value "SAMEORIGIN".
-			//rkechosec.WithXFrameOptions("my-value"),
+			//rkmidsec.WithXFrameOptions("my-value"),
 			//
 			// Optional, Strict-Transport-Security header value.
-			//rkechosec.WithHSTSMaxAge(1),
+			//rkmidsec.WithHSTSMaxAge(1),
 			//
 			// Optional, excluding subdomains of HSTS, default is false
-			//rkechosec.WithHSTSExcludeSubdomains(true),
+			//rkmidsec.WithHSTSExcludeSubdomains(true),
 			//
 			// Optional, enabling HSTS preload, default is false
-			//rkechosec.WithHSTSPreloadEnabled(true),
+			//rkmidsec.WithHSTSPreloadEnabled(true),
 			//
 			// Content-Security-Policy header value.
 			// Optional. Default value "".
-			//rkechosec.WithContentSecurityPolicy("my-value"),
+			//rkmidsec.WithContentSecurityPolicy("my-value"),
 			//
 			// Content-Security-Policy-Report-Only header value.
 			// Optional. Default value false.
-			//rkechosec.WithCSPReportOnly(true),
+			//rkmidsec.WithCSPReportOnly(true),
 			//
 			// Referrer-Policy header value.
 			// Optional. Default value "".
-			//rkechosec.WithReferrerPolicy("my-value"),
+			//rkmidsec.WithReferrerPolicy("my-value"),
 			//
 			// Ignoring path prefix.
-			//rkechosec.WithIgnorePrefix("/rk/v1"),
+			//rkmidsec.WithIgnorePrefix("/rk/v1"),
 		),
 	}
 

@@ -6,12 +6,14 @@
 package rkechojwt
 
 import (
-	"errors"
-	"github.com/golang-jwt/jwt/v4"
+	"bytes"
 	"github.com/labstack/echo/v4"
+	"github.com/rookie-ninja/rk-common/error"
+	"github.com/rookie-ninja/rk-entry/middleware/jwt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"strings"
+	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -22,41 +24,28 @@ var userHandler = func(ctx echo.Context) error {
 func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	// with skipper
-	ctx, resp := newCtx()
-	handler := Interceptor(WithSkipper(func(context echo.Context) bool {
-		return true
-	}))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
+	beforeCtx := rkmidjwt.NewBeforeCtx()
+	mock := rkmidjwt.NewOptionSetMock(beforeCtx)
+	inter := Interceptor(rkmidjwt.WithMockOptionSet(mock))
 
-	// without options
-	ctx, resp = newCtx()
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusUnauthorized, resp.Code)
+	// case 1: error response
+	beforeCtx.Output.ErrResp = rkerror.New(rkerror.WithHttpCode(http.StatusUnauthorized))
+	ctx, w := newCtx()
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 
-	// with parse token error
-	parseTokenErrFunc := func(auth string, c echo.Context) (*jwt.Token, error) {
-		return nil, errors.New("ut-error")
-	}
-	ctx, resp = newCtx()
-	ctx.Request().Header.Set(headerAuthorization, strings.Join([]string{"Bearer", "ut-auth"}, " "))
-	handler = Interceptor(
-		WithParseTokenFunc(parseTokenErrFunc))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusUnauthorized, resp.Code)
+	// case 2: happy case
+	beforeCtx.Output.ErrResp = nil
+	ctx, w = newCtx()
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
 
-	// happy case
-	parseTokenErrFunc = func(auth string, c echo.Context) (*jwt.Token, error) {
-		return &jwt.Token{}, nil
-	}
-	ctx, resp = newCtx()
-	ctx.Request().Header.Set(headerAuthorization, strings.Join([]string{"Bearer", "ut-auth"}, " "))
-	handler = Interceptor(
-		WithParseTokenFunc(parseTokenErrFunc))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
+	resp := httptest.NewRecorder()
+	return echo.New().NewContext(req, resp), resp
 }
 
 func assertNotPanic(t *testing.T) {
@@ -67,4 +56,8 @@ func assertNotPanic(t *testing.T) {
 		// This should never be called in case of a bug
 		assert.True(t, true)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

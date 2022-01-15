@@ -12,6 +12,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-echo/interceptor/tracing/telemetry"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidtrace "github.com/rookie-ninja/rk-entry/middleware/tracing"
 	"net/http"
 )
 
@@ -23,13 +24,13 @@ func main() {
 	// ****************************************
 
 	// Export trace to stdout
-	exporter := rkechotrace.CreateFileExporter("stdout")
+	exporter := rkmidtrace.NewFileExporter("stdout")
 
 	// Export trace to local file system
-	//exporter := rkechotrace.CreateFileExporter("logs/trace.log")
+	// exporter := rkmidtrace.NewFileExporter("logs/trace.log")
 
 	// Export trace to jaeger agent
-	//exporter := rkechotrace.CreateJaegerExporter(jaeger.WithAgentEndpoint())
+	// exporter := rkmidtrace.NewJaegerExporter(jaeger.WithAgentEndpoint())
 
 	// ********************************************
 	// ********** Enable interceptors *************
@@ -38,19 +39,19 @@ func main() {
 		rkecholog.Interceptor(),
 		rkechotrace.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			//rkechotrace.WithEntryNameAndType("greeter", "echo"),
+			// rkmidtrace.WithEntryNameAndType("greeter", "echo"),
 			//
 			// Provide an exporter.
-			rkechotrace.WithExporter(exporter),
-		//
-		// Provide propagation.TextMapPropagator
-		// rkechotrace.WithPropagator(<propagator>),
-		//
-		// Provide SpanProcessor
-		// rkechotrace.WithSpanProcessor(<span processor>),
-		//
-		// Provide TracerProvider
-		// rkechotrace.WithTracerProvider(<trace provider>),
+			rkmidtrace.WithExporter(exporter),
+			//
+			// Provide propagation.TextMapPropagator
+			// rkmidtrace.WithPropagator(<propagator>),
+			//
+			// Provide SpanProcessor
+			// rkmidtrace.WithSpanProcessor(<span processor>),
+			//
+			// Provide TracerProvider
+			// rkmidtrace.WithTracerProvider(<trace provider>),
 		),
 	}
 

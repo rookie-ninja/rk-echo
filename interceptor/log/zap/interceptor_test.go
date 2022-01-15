@@ -6,68 +6,54 @@
 package rkecholog
 
 import (
+	"bytes"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	"github.com/rookie-ninja/rk-entry/entry"
+	"github.com/rookie-ninja/rk-entry/middleware"
+	"github.com/rookie-ninja/rk-entry/middleware/log"
 	"github.com/rookie-ninja/rk-query"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-var defaultMiddlewareFunc = func(context echo.Context) error {
-	return nil
+var userHandler = func(ctx echo.Context) error {
+	return ctx.String(http.StatusOK, "")
 }
 
-func newCtx() echo.Context {
-	return echo.New().NewContext(
-		httptest.NewRequest(http.MethodGet, "/ut-path", nil),
-		httptest.NewRecorder())
-}
-
-func TestInterceptor_WithShouldNotLog(t *testing.T) {
+func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	ctx := newCtx()
-	ctx.Request().URL.Path = "/rk/v1/assets"
+	beforeCtx := rkmidlog.NewBeforeCtx()
+	afterCtx := rkmidlog.NewAfterCtx()
+	mock := rkmidlog.NewOptionSetMock(beforeCtx, afterCtx)
+	inter := Interceptor(rkmidlog.WithMockOptionSet(mock))
+	ctx, w := newCtx()
 
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithZapLoggerEntry(rkentry.NoopZapLoggerEntry()),
-		WithEventLoggerEntry(rkentry.NoopEventLoggerEntry()))
+	// happy case
+	event := rkentry.NoopEventLoggerEntry().GetEventFactory().CreateEventNoop()
+	logger := rkentry.NoopZapLoggerEntry().GetLogger()
+	beforeCtx.Output.Event = event
+	beforeCtx.Output.Logger = logger
 
-	f := handler(defaultMiddlewareFunc)
+	inter(userHandler)(ctx)
 
-	assert.Nil(t, f(ctx))
+	eventFromCtx := ctx.Get(rkmid.EventKey.String())
+	loggerFromCtx := ctx.Get(rkmid.LoggerKey.String())
+	assert.Equal(t, event, eventFromCtx.(rkquery.Event))
+	assert.Equal(t, logger, loggerFromCtx.(*zap.Logger))
+
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestInterceptor_HappyCase(t *testing.T) {
-	defer assertNotPanic(t)
-
-	ctx := newCtx()
-
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithZapLoggerEntry(rkentry.NoopZapLoggerEntry()),
-		WithEventLoggerEntry(rkentry.NoopEventLoggerEntry()))
-
-	ctx.Response().Writer.Header().Set(rkechoctx.RequestIdKey, "ut-request-id")
-	ctx.Response().Writer.Header().Set(rkechoctx.TraceIdKey, "ut-trace-id")
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.Nil(t, f(ctx))
-
-	event := rkechoctx.GetEvent(ctx)
-
-	assert.NotEmpty(t, event.GetRemoteAddr())
-	assert.NotEmpty(t, event.ListPayloads())
-	assert.NotEmpty(t, event.GetOperation())
-	assert.NotEmpty(t, event.GetRequestId())
-	assert.NotEmpty(t, event.GetTraceId())
-	assert.NotEmpty(t, event.GetResCode())
-	assert.Equal(t, rkquery.Ended, event.GetEventStatus())
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
+	resp := httptest.NewRecorder()
+	return echo.New().NewContext(req, resp), resp
 }
 
 func assertNotPanic(t *testing.T) {
@@ -78,4 +64,8 @@ func assertNotPanic(t *testing.T) {
 		// This should never be called in case of a bug
 		assert.True(t, true)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

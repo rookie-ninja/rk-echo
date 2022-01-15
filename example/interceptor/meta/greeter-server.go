@@ -32,10 +32,10 @@ func main() {
 		//rkecholog.Interceptor(),
 		rkechometa.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		// rkechometa.WithEntryNameAndType("greeter", "echo"),
+		// rkmidmeta.WithEntryNameAndType("greeter", "echo"),
 		//
 		// We will replace X-<Prefix>-XXX with prefix user provided.
-		// rkechometa.WithPrefix("Dog"),
+		// rkmidmeta.WithPrefix("Dog"),
 		),
 	}
 

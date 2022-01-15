@@ -20,7 +20,6 @@ func TestNewOptionSet(t *testing.T) {
 	// without options
 	set := newOptionSet()
 	assert.NotEmpty(t, set.EntryName)
-	assert.NotEmpty(t, set.EntryType)
 	assert.False(t, set.Skipper(echo.New().NewContext(nil, nil)))
 	assert.Equal(t, DefaultCompression, set.Level)
 	assert.NotNil(t, set.decompressPool)
