@@ -10,7 +10,7 @@ import (
 	"context"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-echo/interceptor"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
 	otelcodes "go.opentelemetry.io/otel/codes"
@@ -18,13 +18,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"net/http"
-)
-
-const (
-	// RequestIdKey is the header key sent to client
-	RequestIdKey = "X-Request-Id"
-	// TraceIdKey is the header sent to client
-	TraceIdKey = "X-Trace-Id"
 )
 
 var (
@@ -64,7 +57,7 @@ func GetEvent(ctx echo.Context) rkquery.Event {
 		return noopEvent
 	}
 
-	if raw := ctx.Get(rkechointer.RpcEventKey); raw != nil {
+	if raw := ctx.Get(rkmid.EventKey.String()); raw != nil {
 		return raw.(rkquery.Event)
 	}
 
@@ -77,7 +70,7 @@ func GetLogger(ctx echo.Context) *zap.Logger {
 		return rklogger.NoopLogger
 	}
 
-	if raw := ctx.Get(rkechointer.RpcLoggerKey); raw != nil {
+	if raw := ctx.Get(rkmid.LoggerKey.String()); raw != nil {
 		requestId := GetRequestId(ctx)
 		traceId := GetTraceId(ctx)
 		fields := make([]zap.Field, 0)
@@ -102,7 +95,7 @@ func GetRequestId(ctx echo.Context) string {
 		return ""
 	}
 
-	return ctx.Response().Writer.Header().Get(RequestIdKey)
+	return ctx.Response().Writer.Header().Get(rkmid.HeaderRequestId)
 }
 
 // GetTraceId extract trace id from context.
@@ -111,7 +104,7 @@ func GetTraceId(ctx echo.Context) string {
 		return ""
 	}
 
-	return ctx.Response().Writer.Header().Get(TraceIdKey)
+	return ctx.Response().Writer.Header().Get(rkmid.HeaderTraceId)
 }
 
 // GetEntryName extract entry name from context.
@@ -120,7 +113,7 @@ func GetEntryName(ctx echo.Context) string {
 		return ""
 	}
 
-	if raw := ctx.Get(rkechointer.RpcEntryNameKey); raw != nil {
+	if raw := ctx.Get(rkmid.EntryNameKey.String()); raw != nil {
 		return raw.(string)
 	}
 
@@ -137,7 +130,7 @@ func GetTraceSpan(ctx echo.Context) trace.Span {
 
 	_, span = noopTracerProvider.Tracer("rk-trace-noop").Start(ctx.Request().Context(), "noop-span")
 
-	if raw := ctx.Get(rkechointer.RpcSpanKey); raw != nil {
+	if raw := ctx.Get(rkmid.SpanKey.String()); raw != nil {
 		return raw.(trace.Span)
 	}
 
@@ -150,7 +143,7 @@ func GetTracer(ctx echo.Context) trace.Tracer {
 		return noopTracerProvider.Tracer("rk-trace-noop")
 	}
 
-	if raw := ctx.Get(rkechointer.RpcTracerKey); raw != nil {
+	if raw := ctx.Get(rkmid.TracerKey.String()); raw != nil {
 		return raw.(trace.Tracer)
 	}
 
@@ -163,7 +156,7 @@ func GetTracerProvider(ctx echo.Context) trace.TracerProvider {
 		return noopTracerProvider
 	}
 
-	if raw := ctx.Get(rkechointer.RpcTracerProviderKey); raw != nil {
+	if raw := ctx.Get(rkmid.TracerProviderKey.String()); raw != nil {
 		return raw.(trace.TracerProvider)
 	}
 
@@ -176,7 +169,7 @@ func GetTracerPropagator(ctx echo.Context) propagation.TextMapPropagator {
 		return nil
 	}
 
-	if raw := ctx.Get(rkechointer.RpcPropagatorKey); raw != nil {
+	if raw := ctx.Get(rkmid.PropagatorKey.String()); raw != nil {
 		return raw.(propagation.TextMapPropagator)
 	}
 
@@ -223,7 +216,7 @@ func GetJwtToken(ctx echo.Context) *jwt.Token {
 		return nil
 	}
 
-	if raw := ctx.Get(rkechointer.RpcJwtTokenKey); raw != nil {
+	if raw := ctx.Get(rkmid.JwtTokenKey.String()); raw != nil {
 		if res, ok := raw.(*jwt.Token); ok {
 			return res
 		}
@@ -238,7 +231,7 @@ func GetCsrfToken(ctx echo.Context) string {
 		return ""
 	}
 
-	if raw := ctx.Get(rkechointer.RpcCsrfTokenKey); raw != nil {
+	if raw := ctx.Get(rkmid.CsrfTokenKey.String()); raw != nil {
 		if res, ok := raw.(string); ok {
 			return res
 		}

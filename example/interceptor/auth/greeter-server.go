@@ -12,6 +12,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	"github.com/rookie-ninja/rk-echo/interceptor/log/zap"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidauth "github.com/rookie-ninja/rk-entry/middleware/auth"
 	"net/http"
 )
 
@@ -24,9 +25,9 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		rkecholog.Interceptor(),
 		rkechoauth.Interceptor(
-			// rkechoauth.WithIgnorePrefix("/rk/v1/greeter"),
-			rkechoauth.WithBasicAuth("", "rk-user:rk-pass"),
-			rkechoauth.WithApiKeyAuth("rk-api-key"),
+			// rkmidauth.WithIgnorePrefix("/rk/v1/greeter"),
+			rkmidauth.WithBasicAuth("", "rk-user:rk-pass"),
+			rkmidauth.WithApiKeyAuth("rk-api-key"),
 		),
 	}
 

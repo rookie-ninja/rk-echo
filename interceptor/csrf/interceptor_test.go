@@ -8,9 +8,13 @@ package rkechocsrf
 import (
 	"bytes"
 	"github.com/labstack/echo/v4"
+	rkerror "github.com/rookie-ninja/rk-common/error"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
+	rkmidcsrf "github.com/rookie-ninja/rk-entry/middleware/csrf"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -21,79 +25,32 @@ var userHandler = func(ctx echo.Context) error {
 func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	// match 1
-	ctx, resp := newCtx(http.MethodGet)
-	handler := Interceptor(WithSkipper(func(context echo.Context) bool {
-		return true
-	}))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
+	beforeCtx := rkmidcsrf.NewBeforeCtx()
+	mock := rkmidcsrf.NewOptionSetMock(beforeCtx)
 
-	// match 2.1
-	ctx, resp = newCtx(http.MethodGet)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Contains(t, resp.Header().Get("Set-Cookie"), "_csrf")
+	// case 1: with error response
+	inter := Interceptor(rkmidcsrf.WithMockOptionSet(mock))
+	ctx, w := newCtx()
 
-	// match 2.2
-	ctx, resp = newCtx(http.MethodGet)
-	ctx.Request().AddCookie(&http.Cookie{
-		Name:  "_csrf",
-		Value: "ut-csrf-token",
-	})
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Contains(t, resp.Header().Get("Set-Cookie"), "_csrf")
+	// assign any of error response
+	beforeCtx.Output.ErrResp = rkerror.New(rkerror.WithHttpCode(http.StatusForbidden))
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusForbidden, w.Code)
 
-	// match 3.1
-	ctx, resp = newCtx(http.MethodGet)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
-
-	// match 3.2
-	ctx, resp = newCtx(http.MethodPost)
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusBadRequest, resp.Code)
-
-	// match 3.3
-	ctx, resp = newCtx(http.MethodPost)
-	ctx.Request().Header.Set(headerXCSRFToken, "ut-csrf-token")
-	handler = Interceptor()
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusForbidden, resp.Code)
-
-	// match 4.1
-	ctx, resp = newCtx(http.MethodGet)
-	handler = Interceptor(
-		WithCookiePath("ut-path"))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Contains(t, resp.Header().Get("Set-Cookie"), "ut-path")
-
-	// match 4.2
-	ctx, resp = newCtx(http.MethodGet)
-	handler = Interceptor(
-		WithCookieDomain("ut-domain"))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Contains(t, resp.Header().Get("Set-Cookie"), "ut-domain")
-
-	// match 4.3
-	ctx, resp = newCtx(http.MethodGet)
-	handler = Interceptor(
-		WithCookieSameSite(http.SameSiteStrictMode))
-	assert.Nil(t, handler(userHandler)(ctx))
-	assert.Equal(t, http.StatusOK, resp.Code)
-	assert.Contains(t, resp.Header().Get("Set-Cookie"), "Strict")
+	// case 2: happy case
+	beforeCtx.Output.ErrResp = nil
+	beforeCtx.Output.VaryHeaders = []string{"value"}
+	beforeCtx.Output.Cookie = &http.Cookie{}
+	ctx, w = newCtx()
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NotEmpty(t, w.Header().Get(rkmid.HeaderVary))
+	assert.NotNil(t, w.Header().Get("Set-Cookie"))
 }
 
-func newCtx(method string) (echo.Context, *httptest.ResponseRecorder) {
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
 	var buf bytes.Buffer
-	req := httptest.NewRequest(method, "/ut-path", &buf)
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
 	resp := httptest.NewRecorder()
 	return echo.New().NewContext(req, resp), resp
 }
@@ -106,4 +63,8 @@ func assertNotPanic(t *testing.T) {
 		// This should never be called in case of a bug
 		assert.True(t, true)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

@@ -41,9 +41,9 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/timeout"
 ## Options
 | Name | Default | Description |
 | ---- | ---- | ---- |
-| WithEntryNameAndType(entryName, entryType string) | entryName=echo, entryType=echo | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
-| WithTimeoutAndResp(time.Duration, echo.HandlerFunc) | 5*time.Second, response with http.StatusRequestTimeout | Set timeout interceptor with all routes. |
-| WithTimeoutAndRespByPath(path string, time.Duration, echo.HandlerFunc) | "", 5*time.Second, response with http.StatusRequestTimeout | Set timeout interceptor with specified path. |
+| rkmidtimeout.WithEntryNameAndType(entryName, entryType string) | entryName=gin, entryType=gin | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
+| rkmidtimeout.WithTimeoutAndResp(time.Duration, gin.HandlerFunc) | 5*time.Second, response with http.StatusRequestTimeout | Set timeout interceptor with all routes. |
+| rkmidtimeout.WithTimeoutAndRespByPath(path string, time.Duration, gin.HandlerFunc) | "", 5*time.Second, response with http.StatusRequestTimeout | Set timeout interceptor with specified path. |
 
 ```go
 	// ********************************************
@@ -52,14 +52,14 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/timeout"
 	interceptors := []echo.MiddlewareFunc{
 		rkechotimeout.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		rkechotimeout.WithEntryNameAndType("greeter", "echo"),
+		// rkmidtimeout.WithEntryNameAndType("greeter", "echo"),
 		//
 		// Provide timeout and response handler, a default one would be assigned with http.StatusRequestTimeout
 		// This option impact all routes
-		//rkechotimeout.WithTimeoutAndResp(time.Second, nil),
+		//rkmidtimeout.WithTimeout(time.Second),
 		//
 		// Provide timeout and response handler by path, a default one would be assigned with http.StatusRequestTimeout
-		//rkechotimeout.WithTimeoutAndRespByPath("/rk/v1/healthy", time.Second, nil),
+		//rkmidtimeout.WithTimeoutByPath("/rk/v1/healthy", time.Second),
 		),
 	}
 ```

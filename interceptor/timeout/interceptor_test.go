@@ -8,6 +8,7 @@ package rkechotimeout
 import (
 	"fmt"
 	"github.com/labstack/echo/v4"
+	rkmidtimeout "github.com/rookie-ninja/rk-entry/middleware/timeout"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -15,17 +16,17 @@ import (
 	"time"
 )
 
-func sleepHandler(ctx echo.Context) error {
+func sleepH(ctx echo.Context) error {
 	time.Sleep(time.Second)
 	ctx.JSON(http.StatusOK, "{}")
 	return nil
 }
 
-func panicHandler(ctx echo.Context) error {
+func panicH(ctx echo.Context) error {
 	panic(fmt.Errorf("ut panic"))
 }
 
-func returnHandler(ctx echo.Context) error {
+func returnH(ctx echo.Context) error {
 	ctx.JSON(http.StatusOK, "{}")
 	return nil
 }
@@ -43,8 +44,8 @@ func getEcho(path string, handler echo.HandlerFunc, middleware echo.MiddlewareFu
 
 func TestInterceptor_WithTimeout(t *testing.T) {
 	// with global timeout response
-	e := getEcho("/", sleepHandler, Interceptor(
-		WithTimeoutAndResp(time.Nanosecond, nil)))
+	e := getEcho("/", sleepH, Interceptor(
+		rkmidtimeout.WithTimeout(time.Nanosecond)))
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)
@@ -52,32 +53,21 @@ func TestInterceptor_WithTimeout(t *testing.T) {
 	assert.Equal(t, http.StatusRequestTimeout, w.Code)
 
 	// with path
-	e = getEcho("/ut-path", sleepHandler, Interceptor(
-		WithTimeoutAndRespByPath("/ut-path", time.Nanosecond, nil)))
+	e = getEcho("/ut-path", sleepH, Interceptor(
+		rkmidtimeout.WithTimeoutByPath("/ut-path", time.Nanosecond)))
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("GET", "/ut-path", nil)
 	e.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusRequestTimeout, w.Code)
-
-	// with custom response
-	e = getEcho("/", sleepHandler, Interceptor(
-		WithTimeoutAndRespByPath("/", time.Nanosecond, customResponse)))
-
-	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("GET", "/", nil)
-	e.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusRequestTimeout, w.Code)
-	assert.Contains(t, w.Body.String(), customResponse(nil).Error())
 }
 
 func TestInterceptor_WithPanic(t *testing.T) {
 	defer assertPanic(t)
 
-	r := getEcho("/", panicHandler, Interceptor(
-		WithTimeoutAndResp(time.Minute, nil)))
+	r := getEcho("/", panicH, Interceptor(
+		rkmidtimeout.WithTimeout(time.Minute)))
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/", nil)
@@ -89,11 +79,11 @@ func TestInterceptor_HappyCase(t *testing.T) {
 	// We expect interceptor acts as the name describes
 	r := echo.New()
 	r.Use(Interceptor(
-		WithTimeoutAndRespByPath("/timeout", time.Nanosecond, nil),
-		WithTimeoutAndRespByPath("/happy", time.Minute, nil)))
+		rkmidtimeout.WithTimeoutByPath("/timeout", time.Nanosecond),
+		rkmidtimeout.WithTimeoutByPath("/happy", time.Minute)))
 
-	r.GET("/timeout", sleepHandler)
-	r.GET("/happy", returnHandler)
+	r.GET("/timeout", sleepH)
+	r.GET("/happy", returnH)
 
 	// timeout on /timeout
 	w := httptest.NewRecorder()

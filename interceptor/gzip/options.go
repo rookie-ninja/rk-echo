@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-echo/interceptor"
+	"github.com/rs/xid"
 	"io"
 	"io/ioutil"
 	"net"
@@ -45,8 +45,8 @@ var (
 // Create new optionSet with rpc type nad options.
 func newOptionSet(opts ...Option) *optionSet {
 	set := &optionSet{
-		EntryName:      rkechointer.RpcEntryNameValue,
-		EntryType:      rkechointer.RpcEntryTypeValue,
+		EntryName:      xid.New().String(),
+		EntryType:      "",
 		Skipper:        defaultSkipper,
 		Level:          DefaultCompression,
 		decompressPool: newDecompressPool(),

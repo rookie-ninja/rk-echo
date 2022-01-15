@@ -48,12 +48,13 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/ratelimit"
 ## Options
 | Name | Default | Description |
 | ---- | ---- | ---- |
-| WithEntryNameAndType(entryName, entryType string) | entryName=gf, entryType=gf | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
-| WithReqPerSec(int) | int | Global rate limit per second. |
-| WithReqPerSecByPath(path string, reqPerSec int) | "", 0 | Request limiter by Restful method. |
-| WithAlgorithm(algo string) | tokenBucket | Algorithm of rate limiter. |
-| WithGlobalLimiter(l Limiter) | nil | Provider user defined limiter. |
-| WithLimiterByPath(path string, l Limiter) | "", nil | Provider user defined limiter by Restful method. |
+| rkmidlimit.WithEntryNameAndType(entryName, entryType string) | entryName=gin, entryType=gin | entryName and entryType will be used to distinguish options if there are multiple interceptors in single process. |
+| rkmidlimit.WithReqPerSec(int) | int | Global rate limit per second. |
+| rkmidlimit.WithReqPerSecByPath(path string, reqPerSec int) | "", 0 | Request limiter by gin method. |
+| rkmidlimit.WithAlgorithm(algo string) | tokenBucket | Algorithm of rate limiter. |
+| rkmidlimit.WithGlobalLimiter(l Limiter) | nil | Provider user defined limiter. |
+| rkmidlimit.WithLimiterByPath(path string, l Limiter) | "", nil | Provider user defined limiter by gin method. |
+
 
 ```go
 	// ********************************************
@@ -63,29 +64,28 @@ import     "github.com/rookie-ninja/rk-echo/interceptor/ratelimit"
 		rkecholog.Interceptor(),
 		rkecholimit.Interceptor(
 		// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-		//rkechometa.WithEntryNameAndType("greeter", "echo"),
+		// rkmidlimit.WithEntryNameAndType("greeter", "gin"),
 		//
-		// Provide algorithm, rkecholimit.LeakyBucket and rkecholimit.TokenBucket was available, default is TokenBucket.
-		//rkecholimit.WithAlgorithm(rkecholimit.LeakyBucket),
+		// Provide algorithm, rkmidlimit.LeakyBucket and rkmidlimit.TokenBucket was available, default is TokenBucket.
+		//rkmidlimit.WithAlgorithm(rkmidlimit.LeakyBucket),
 		//
 		// Provide request per second, if provide value of zero, then no requests will be pass through and user will receive an error with
 		// resource exhausted.
-		//rkecholimit.WithReqPerSec(10),
+		//rkmidlimit.WithReqPerSec(10),
 		//
 		// Provide request per second with path name.
 		// The name should be full path name. if provide value of zero,
 		// then no requests will be pass through and user will receive an error with resource exhausted.
-		//rkecholimit.WithReqPerSecByPath("/rk/v1/greeter", 10),
+		//rkmidlimit.WithReqPerSecByPath("/rk/v1/greeter", 0),
 		//
-		// Provide user function of limiter. Returns error if you want to limit the request.
-		// Please do not try to set response code since it will be overridden by middleware.
-		//rkecholimit.WithGlobalLimiter(func(ctx echo.Context) error {
-		//	return fmt.Errorf("limited by custom limiter")
+		// Provide user function of limiter
+		//rkmidlimit.WithGlobalLimiter(func() error {
+		//	 return nil
 		//}),
 		//
 		// Provide user function of limiter by path name.
 		// The name should be full path name.
-		//rkecholimit.WithLimiterByPath("/rk/v1/greeter", func(ctx echo.Context) error {
+		//rkmidlimit.WithLimiterByPath("/rk/v1/greeter", func() error {
 		//	 return nil
 		//}),
 		),

@@ -12,6 +12,7 @@ import (
 	"github.com/rookie-ninja/rk-echo/interceptor/context"
 	"github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
 	"github.com/rookie-ninja/rk-entry/entry"
+	rkmidmetrics "github.com/rookie-ninja/rk-entry/middleware/metrics"
 	"github.com/rookie-ninja/rk-prom"
 	"net/http"
 )
@@ -28,11 +29,11 @@ func main() {
 	interceptors := []echo.MiddlewareFunc{
 		rkechometrics.Interceptor(
 			// Entry name and entry type will be used for distinguishing interceptors. Recommended.
-			rkechometrics.WithEntryNameAndType("greeter", "echo"),
+			rkmidmetrics.WithEntryNameAndType("greeter", "echo"),
 			//
 			// Provide new prometheus registerer.
 			// Default value is prometheus.DefaultRegisterer
-			rkechometrics.WithRegisterer(prometheus.NewRegistry()),
+			rkmidmetrics.WithRegisterer(prometheus.NewRegistry()),
 		),
 	}
 

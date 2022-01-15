@@ -6,123 +6,49 @@
 package rkechoauth
 
 import (
-	"fmt"
+	"bytes"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-echo/interceptor"
+	rkerror "github.com/rookie-ninja/rk-common/error"
+	rkmidauth "github.com/rookie-ninja/rk-entry/middleware/auth"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-var defaultMiddlewareFunc = func(context echo.Context) error {
+var userFunc = func(context echo.Context) error {
 	return nil
 }
 
-func TestInterceptor_WithIgnoringPath(t *testing.T) {
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/ut-ignore-path", nil)
-	res := httptest.NewRecorder()
-	ctx := e.NewContext(req, res)
-
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"),
-		WithIgnorePrefix("/ut-ignore-path"))
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.Nil(t, f(ctx))
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
+	resp := httptest.NewRecorder()
+	return echo.New().NewContext(req, resp), resp
 }
 
-func TestInterceptor_WithBasicAuth_Invalid(t *testing.T) {
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/ut-path", nil)
-	res := httptest.NewRecorder()
-	ctx := e.NewContext(req, res)
+func TestInterceptor(t *testing.T) {
+	beforeCtx := rkmidauth.NewBeforeCtx()
+	mock := rkmidauth.NewOptionSetMock(beforeCtx)
 
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"))
+	// case 1: with error response
+	inter := Interceptor(rkmidauth.WithMockOptionSet(mock))
+	ctx, w := newCtx()
+	// assign any of error response
+	beforeCtx.Output.ErrResp = rkerror.New(rkerror.WithHttpCode(http.StatusUnauthorized))
+	beforeCtx.Output.HeadersToReturn["key"] = "value"
+	inter(userFunc)(ctx)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Equal(t, "value", w.Header().Get("key"))
 
-	// set invalid auth header
-	req.Header.Set(rkechointer.RpcAuthorizationHeaderKey, "invalid")
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.NotNil(t, f(ctx))
-	assert.Equal(t, http.StatusUnauthorized, ctx.Response().Status)
+	// case 2: happy case
+	beforeCtx.Output.ErrResp = nil
+	ctx, w = newCtx()
+	inter(userFunc)(ctx)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestInterceptor_WithBasicAuth_InvalidBasicAuth(t *testing.T) {
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/ut-path", nil)
-	res := httptest.NewRecorder()
-	ctx := e.NewContext(req, res)
-
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithBasicAuth("ut-realm", "user:pass"))
-
-	// set invalid auth header
-	req.Header.Set(rkechointer.RpcAuthorizationHeaderKey, fmt.Sprintf("%s invalid", typeBasic))
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.NotNil(t, f(ctx))
-	assert.Equal(t, http.StatusUnauthorized, ctx.Response().Status)
-}
-
-func TestInterceptor_WithApiKey_Invalid(t *testing.T) {
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/ut-path", nil)
-	res := httptest.NewRecorder()
-	ctx := e.NewContext(req, res)
-
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithApiKeyAuth("ut-api-key"))
-
-	// set invalid auth header
-	req.Header.Set(rkechointer.RpcApiKeyHeaderKey, "invalid")
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.NotNil(t, f(ctx))
-	assert.Equal(t, http.StatusUnauthorized, ctx.Response().Status)
-}
-
-func TestInterceptor_MissingAuth(t *testing.T) {
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/ut-path", nil)
-	res := httptest.NewRecorder()
-	ctx := e.NewContext(req, res)
-
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithApiKeyAuth("ut-api-key"))
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.NotNil(t, f(ctx))
-	assert.Equal(t, http.StatusUnauthorized, ctx.Response().Status)
-}
-
-func TestInterceptor_HappyCase(t *testing.T) {
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/ut-ignore-path", nil)
-	res := httptest.NewRecorder()
-	ctx := e.NewContext(req, res)
-
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		//WithBasicAuth("ut-realm", "user:pass"),
-		WithApiKeyAuth("ut-api-key"))
-
-	req.Header.Set(rkechointer.RpcApiKeyHeaderKey, "ut-api-key")
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.Nil(t, f(ctx))
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

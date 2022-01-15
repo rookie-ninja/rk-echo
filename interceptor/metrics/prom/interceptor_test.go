@@ -6,26 +6,42 @@
 package rkechometrics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"bytes"
+	"github.com/labstack/echo/v4"
+	rkmidmetrics "github.com/rookie-ninja/rk-entry/middleware/metrics"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 )
+
+var userHandler = func(ctx echo.Context) error {
+	return ctx.String(http.StatusOK, "")
+}
 
 func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	handler := Interceptor(
-		WithEntryNameAndType("ut-entry", "ut-type"),
-		WithRegisterer(prometheus.NewRegistry()))
+	beforeCtx := rkmidmetrics.NewBeforeCtx()
+	afterCtx := rkmidmetrics.NewAfterCtx()
+	mock := rkmidmetrics.NewOptionSetMock(beforeCtx, afterCtx)
+	inter := Interceptor(rkmidmetrics.WithMockOptionSet(mock))
 
-	// With ignoring case
-	ctx := newCtx()
-	ctx.Request().URL.Path = "/rk/v1/assets"
+	ctx, w := newCtx()
 
-	// Happy case
-	f := handler(defaultMiddlewareFunc)
+	inter(userHandler)(ctx)
 
-	assert.Nil(t, f(ctx))
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	rkmidmetrics.ClearAllMetrics()
+}
+
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
+	resp := httptest.NewRecorder()
+	return echo.New().NewContext(req, resp), resp
 }
 
 func assertNotPanic(t *testing.T) {
@@ -36,4 +52,8 @@ func assertNotPanic(t *testing.T) {
 		// This should never be called in case of a bug
 		assert.True(t, true)
 	}
+}
+
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

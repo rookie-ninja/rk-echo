@@ -7,8 +7,9 @@ package rkechoctx
 
 import (
 	"context"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-echo/interceptor"
+	"github.com/rookie-ninja/rk-entry/middleware"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
 	"github.com/stretchr/testify/assert"
@@ -75,7 +76,7 @@ func TestGetEvent(t *testing.T) {
 
 	// Happy case
 	event := rkquery.NewEventFactory().CreateEventNoop()
-	ctx.Set(rkechointer.RpcEventKey, event)
+	ctx.Set(rkmid.EventKey.String(), event)
 	assert.Equal(t, event, GetEvent(ctx))
 }
 
@@ -90,9 +91,9 @@ func TestGetLogger(t *testing.T) {
 
 	// Happy case
 	// Add request id and trace id
-	ctx.Response().Writer.Header().Set(RequestIdKey, "ut-request-id")
-	ctx.Response().Writer.Header().Set(TraceIdKey, "ut-trace-id")
-	ctx.Set(rkechointer.RpcLoggerKey, rklogger.NoopLogger)
+	ctx.Response().Writer.Header().Set(rkmid.HeaderRequestId, "ut-request-id")
+	ctx.Response().Writer.Header().Set(rkmid.HeaderTraceId, "ut-trace-id")
+	ctx.Set(rkmid.LoggerKey.String(), rklogger.NoopLogger)
 
 	assert.Equal(t, rklogger.NoopLogger, GetLogger(ctx))
 }
@@ -107,7 +108,7 @@ func TestGetRequestId(t *testing.T) {
 	assert.Empty(t, GetRequestId(ctx))
 
 	// Happy case
-	ctx.Response().Writer.Header().Set(RequestIdKey, "ut-request-id")
+	ctx.Response().Writer.Header().Set(rkmid.HeaderRequestId, "ut-request-id")
 	assert.Equal(t, "ut-request-id", GetRequestId(ctx))
 }
 
@@ -121,7 +122,7 @@ func TestGetTraceId(t *testing.T) {
 	assert.Empty(t, GetTraceId(ctx))
 
 	// Happy case
-	ctx.Response().Writer.Header().Set(TraceIdKey, "ut-trace-id")
+	ctx.Response().Writer.Header().Set(rkmid.HeaderTraceId, "ut-trace-id")
 	assert.Equal(t, "ut-trace-id", GetTraceId(ctx))
 }
 
@@ -135,7 +136,7 @@ func TestGetEntryName(t *testing.T) {
 	assert.Empty(t, GetEntryName(ctx))
 
 	// Happy case
-	ctx.Set(rkechointer.RpcEntryNameKey, "ut-entry-name")
+	ctx.Set(rkmid.EntryNameKey.String(), "ut-entry-name")
 	assert.Equal(t, "ut-entry-name", GetEntryName(ctx))
 }
 
@@ -151,7 +152,7 @@ func TestGetTraceSpan(t *testing.T) {
 
 	// Happy case
 	_, span := noopTracerProvider.Tracer("ut-trace").Start(ctx.Request().Context(), "noop-span")
-	ctx.Set(rkechointer.RpcSpanKey, span)
+	ctx.Set(rkmid.SpanKey.String(), span)
 	assert.Equal(t, span, GetTraceSpan(ctx))
 }
 
@@ -167,7 +168,7 @@ func TestGetTracer(t *testing.T) {
 
 	// Happy case
 	tracer := noopTracerProvider.Tracer("ut-trace")
-	ctx.Set(rkechointer.RpcTracerKey, tracer)
+	ctx.Set(rkmid.TracerKey.String(), tracer)
 	assert.Equal(t, tracer, GetTracer(ctx))
 }
 
@@ -183,7 +184,7 @@ func TestGetTracerProvider(t *testing.T) {
 
 	// Happy case
 	provider := trace.NewNoopTracerProvider()
-	ctx.Set(rkechointer.RpcTracerProviderKey, provider)
+	ctx.Set(rkmid.TracerProviderKey.String(), provider)
 	assert.Equal(t, provider, GetTracerProvider(ctx))
 }
 
@@ -199,7 +200,7 @@ func TestGetTracerPropagator(t *testing.T) {
 
 	// Happy case
 	prop := propagation.NewCompositeTextMapPropagator()
-	ctx.Set(rkechointer.RpcPropagatorKey, prop)
+	ctx.Set(rkmid.PropagatorKey.String(), prop)
 	assert.Equal(t, prop, GetTracerPropagator(ctx))
 }
 
@@ -214,7 +215,7 @@ func TestInjectSpanToHttpRequest(t *testing.T) {
 	ctx.SetRequest(ctx.Request().WithContext(context.TODO()))
 
 	prop := propagation.NewCompositeTextMapPropagator()
-	ctx.Set(rkechointer.RpcPropagatorKey, prop)
+	ctx.Set(rkmid.PropagatorKey.String(), prop)
 	InjectSpanToHttpRequest(ctx, &http.Request{
 		Header: http.Header{},
 	})
@@ -240,6 +241,36 @@ func TestEndTraceSpan(t *testing.T) {
 	// With failure
 	span = GetTraceSpan(ctx)
 	EndTraceSpan(ctx, span, false)
+}
+
+func TestGetJwtToken(t *testing.T) {
+	defer assertNotPanic(t)
+
+	// with nil
+	assert.Nil(t, GetJwtToken(nil))
+
+	// With failure
+	ctx := newCtx()
+	assert.Nil(t, GetJwtToken(ctx))
+
+	// With success
+	ctx.Set(rkmid.JwtTokenKey.String(), &jwt.Token{})
+	assert.NotNil(t, GetJwtToken(ctx))
+}
+
+func TestGetCsrfToken(t *testing.T) {
+	defer assertNotPanic(t)
+
+	// with nil
+	assert.Empty(t, GetCsrfToken(nil))
+
+	// With failure
+	ctx := newCtx()
+	assert.Empty(t, GetCsrfToken(ctx))
+
+	// With success
+	ctx.Set(rkmid.CsrfTokenKey.String(), "value")
+	assert.Equal(t, "value", GetCsrfToken(ctx))
 }
 
 func assertNotPanic(t *testing.T) {

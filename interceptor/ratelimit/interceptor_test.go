@@ -6,75 +6,59 @@
 package rkecholimit
 
 import (
-	"fmt"
+	"bytes"
 	"github.com/labstack/echo/v4"
+	"github.com/rookie-ninja/rk-common/error"
+	"github.com/rookie-ninja/rk-entry/middleware/ratelimit"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 )
 
-func TestInterceptor_WithoutOptions(t *testing.T) {
-	defer assertNotPanic(t)
-
-	handler := Interceptor()
-
-	ctx := newCtx()
-	ctx.Request().URL.Path = "/ut-path"
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.Nil(t, f(ctx))
+var userHandler = func(ctx echo.Context) error {
+	return ctx.String(http.StatusOK, "")
 }
 
-func TestInterceptor_WithTokenBucket(t *testing.T) {
+func TestInterceptor(t *testing.T) {
 	defer assertNotPanic(t)
 
-	handler := Interceptor(
-		WithAlgorithm(TokenBucket),
-		WithReqPerSec(1),
-		WithReqPerSecByPath("ut-path", 1))
+	beforeCtx := rkmidlimit.NewBeforeCtx()
+	mock := rkmidlimit.NewOptionSetMock(beforeCtx)
 
-	ctx := newCtx()
-	ctx.Request().URL.Path = "/ut-path"
+	// case 1: with error response
+	inter := Interceptor(rkmidlimit.WithMockOptionSet(mock))
+	ctx, w := newCtx()
+	// assign any of error response
+	beforeCtx.Output.ErrResp = rkerror.New(rkerror.WithHttpCode(http.StatusTooManyRequests))
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusTooManyRequests, w.Code)
 
-	f := handler(defaultMiddlewareFunc)
-
-	assert.Nil(t, f(ctx))
+	// case 2: happy case
+	ctx, w = newCtx()
+	beforeCtx.Output.ErrResp = nil
+	inter(userHandler)(ctx)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestInterceptor_WithLeakyBucket(t *testing.T) {
-	defer assertNotPanic(t)
-
-	handler := Interceptor(
-		WithAlgorithm(LeakyBucket),
-		WithReqPerSec(1),
-		WithReqPerSecByPath("ut-path", 1))
-
-	ctx := newCtx()
-	ctx.Request().URL.Path = "/ut-path"
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.Nil(t, f(ctx))
+func newCtx() (echo.Context, *httptest.ResponseRecorder) {
+	var buf bytes.Buffer
+	req := httptest.NewRequest(http.MethodGet, "/ut-path", &buf)
+	resp := httptest.NewRecorder()
+	return echo.New().NewContext(req, resp), resp
 }
 
-func TestInterceptor_WithUserLimiter(t *testing.T) {
-	defer assertNotPanic(t)
+func assertNotPanic(t *testing.T) {
+	if r := recover(); r != nil {
+		// Expect panic to be called with non nil error
+		assert.True(t, false)
+	} else {
+		// This should never be called in case of a bug
+		assert.True(t, true)
+	}
+}
 
-	handler := Interceptor(
-		WithGlobalLimiter(func(ctx echo.Context) error {
-			return fmt.Errorf("ut-error")
-		}),
-		WithLimiterByPath("/ut-path", func(ctx echo.Context) error {
-			return fmt.Errorf("ut-error")
-		}))
-
-	ctx := newCtx()
-	ctx.Request().URL.Path = "/ut-path"
-
-	f := handler(defaultMiddlewareFunc)
-
-	assert.NotNil(t, f(ctx))
-
-	assert.Equal(t, http.StatusTooManyRequests, ctx.Response().Status)
+func TestMain(m *testing.M) {
+	os.Exit(m.Run())
 }

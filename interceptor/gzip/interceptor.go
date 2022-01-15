@@ -10,7 +10,7 @@ import (
 	"bytes"
 	"github.com/labstack/echo/v4"
 	rkerror "github.com/rookie-ninja/rk-common/error"
-	"github.com/rookie-ninja/rk-echo/interceptor"
+	rkmid "github.com/rookie-ninja/rk-entry/middleware"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -27,7 +27,7 @@ func Interceptor(opts ...Option) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			ctx.Set(rkechointer.RpcEntryNameKey, set.EntryName)
+			ctx.Set(rkmid.EntryNameKey.String(), set.EntryName)
 
 			if set.Skipper(ctx) {
 				return next(ctx)
