@@ -51,7 +51,7 @@ import (
 
 const (
 	// EchoEntryType type of entry
-	EchoEntryType = "EchoEntry"
+	EchoEntryType = "Echo"
 	// EchoEntryDescription description of entry
 	EchoEntryDescription = "Internal RK entry which helps to bootstrap with Echo framework."
 )
@@ -65,13 +65,11 @@ func init() {
 // BootConfig boot config which is for echo entry.
 type BootConfig struct {
 	Echo []struct {
-		Enabled     bool   `yaml:"enabled" json:"enabled"`
-		Name        string `yaml:"name" json:"name"`
-		Port        uint64 `yaml:"port" json:"port"`
-		Description string `yaml:"description" json:"description"`
-		Cert        struct {
-			Ref string `yaml:"ref" json:"ref"`
-		} `yaml:"cert" json:"cert"`
+		Enabled       bool                            `yaml:"enabled" json:"enabled"`
+		Name          string                          `yaml:"name" json:"name"`
+		Port          uint64                          `yaml:"port" json:"port"`
+		Description   string                          `yaml:"description" json:"description"`
+		CertEntry     string                          `yaml:"certEntry" json:"certEntry"`
 		SW            rkentry.BootConfigSw            `yaml:"sw" json:"sw"`
 		CommonService rkentry.BootConfigCommonService `yaml:"commonService" json:"commonService"`
 		TV            rkentry.BootConfigTv            `yaml:"tv" json:"tv"`
@@ -95,12 +93,8 @@ type BootConfig struct {
 			TracingTelemetry rkmidtrace.BootConfig   `yaml:"tracingTelemetry" json:"tracingTelemetry"`
 		} `yaml:"interceptors" json:"interceptors"`
 		Logger struct {
-			ZapLogger struct {
-				Ref string `yaml:"ref" json:"ref"`
-			} `yaml:"zapLogger" json:"zapLogger"`
-			EventLogger struct {
-				Ref string `yaml:"ref" json:"ref"`
-			} `yaml:"eventLogger" json:"eventLogger"`
+			ZapLogger   string `yaml:"zapLogger" json:"zapLogger"`
+			EventLogger string `yaml:"eventLogger" json:"eventLogger"`
 		} `yaml:"logger" json:"logger"`
 	} `yaml:"echo" json:"echo"`
 }
@@ -156,12 +150,12 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 
 		name := element.Name
 
-		zapLoggerEntry := rkentry.GlobalAppCtx.GetZapLoggerEntry(element.Logger.ZapLogger.Ref)
+		zapLoggerEntry := rkentry.GlobalAppCtx.GetZapLoggerEntry(element.Logger.ZapLogger)
 		if zapLoggerEntry == nil {
 			zapLoggerEntry = rkentry.GlobalAppCtx.GetZapLoggerEntryDefault()
 		}
 
-		eventLoggerEntry := rkentry.GlobalAppCtx.GetEventLoggerEntry(element.Logger.EventLogger.Ref)
+		eventLoggerEntry := rkentry.GlobalAppCtx.GetEventLoggerEntry(element.Logger.EventLogger)
 		if eventLoggerEntry == nil {
 			eventLoggerEntry = rkentry.GlobalAppCtx.GetEventLoggerEntryDefault()
 		}
@@ -267,7 +261,7 @@ func RegisterEchoEntriesWithConfig(configFilePath string) map[string]rkentry.Ent
 				rkmidlimit.ToOptions(&element.Interceptors.RateLimit, element.Name, EchoEntryType)...))
 		}
 
-		certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.Cert.Ref)
+		certEntry := rkentry.GlobalAppCtx.GetCertEntry(element.CertEntry)
 
 		entry := RegisterEchoEntry(
 			WithName(name),
@@ -319,6 +313,10 @@ func RegisterEchoEntry(opts ...EchoEntryOption) *EchoEntry {
 		entry.Echo.HidePort = true
 		entry.Echo.HideBanner = true
 	}
+
+	// add entry name and entry type into loki syncer if enabled
+	entry.ZapLoggerEntry.AddEntryLabelToLokiSyncer(entry)
+	entry.EventLoggerEntry.AddEntryLabelToLokiSyncer(entry)
 
 	// insert panic interceptor
 	entry.Echo.Use(rkechopanic.Interceptor(
