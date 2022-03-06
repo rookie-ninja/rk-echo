@@ -4,69 +4,18 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rookie-ninja/rk-echo)](https://goreportcard.com/report/github.com/rookie-ninja/rk-echo)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Interceptor & bootstrapper designed for [labstack/echo](https://github.com/labstack/echo) web framework. [Documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/).
+Middleware & bootstrapper designed for [labstack/echo](https://github.com/labstack/echo) web framework. [Documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/).
 
-This belongs to [rk-boot](https://github.com/rookie-ninja/rk-boot) family. We suggest use this lib from [rk-boot](https://github.com/rookie-ninja/rk-boot).
+This belongs to [rk-boot](https://github.com/rookie-ninja/rk-boot) family. 
 
 ![image](docs/img/boot-arch.png)
-
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
-
-- [Architecture](#architecture)
-- [Supported bootstrap](#supported-bootstrap)
-- [Supported instances](#supported-instances)
-- [Supported middlewares](#supported-middlewares)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-  - [1.Create boot.yaml](#1create-bootyaml)
-  - [2.Create main.go](#2create-maingo)
-  - [3.Start server](#3start-server)
-  - [4.Validation](#4validation)
-    - [4.1 Echo server](#41-echo-server)
-    - [4.2 Swagger UI](#42-swagger-ui)
-    - [4.3 TV](#43-tv)
-    - [4.4 Prometheus Metrics](#44-prometheus-metrics)
-    - [4.5 Logging](#45-logging)
-    - [4.6 Meta](#46-meta)
-    - [4.7 Send request](#47-send-request)
-    - [4.8 RPC logs](#48-rpc-logs)
-    - [4.9 RPC prometheus metrics](#49-rpc-prometheus-metrics)
-- [YAML Options](#yaml-options)
-  - [Echo](#echo)
-  - [CommonService](#commonservice)
-  - [Swagger](#swagger)
-  - [Prometheus Client](#prometheus-client)
-  - [TV](#tv)
-  - [Static file handler](#static-file-handler)
-  - [Middlewares](#middlewares)
-    - [Log](#log)
-    - [Metrics](#metrics)
-    - [Auth](#auth)
-    - [Meta](#meta)
-    - [Tracing](#tracing)
-    - [RateLimit](#ratelimit)
-    - [Timeout](#timeout)
-    - [Gzip](#gzip)
-    - [CORS](#cors)
-    - [JWT](#jwt)
-    - [Secure](#secure)
-    - [CSRF](#csrf)
-  - [Full YAML](#full-yaml)
-- [Development Status: Stable](#development-status-stable)
-- [Build instruction](#build-instruction)
-- [Test instruction](#test-instruction)
-- [Contributing](#contributing)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 ## Architecture
 ![image](docs/img/echo-arch.png)
 
 ## Supported bootstrap
-| Bootstrap | Description |
-| --- | --- |
+| Bootstrap  | Description                                                                    |
+|------------|--------------------------------------------------------------------------------|
 | YAML based | Start [labstack/echo](https://github.com/labstack/echo) microservice from YAML |
 | Code based | Start [labstack/echo](https://github.com/labstack/echo) microservice from code |
 
@@ -75,40 +24,40 @@ All instances could be configured via YAML or Code.
 
 **User can enable anyone of those as needed! No mandatory binding!**
 
-| Instance | Description |
-| --- | --- |
-| Echo | Compatible with original [labstack/echo](https://github.com/labstack/echo) service functionalities |
-| Config | Configure [spf13/viper](https://github.com/spf13/viper) as config instance and reference it from YAML |
-| Logger | Configure [uber-go/zap](https://github.com/uber-go/zap) logger configuration and reference it from YAML |
-| EventLogger | Configure logging of RPC with [rk-query](https://github.com/rookie-ninja/rk-query) and reference it from YAML |
-| Credential | Fetch credentials from remote datastore like ETCD. |
-| Cert | Fetch TLS/SSL certificates from remote datastore like ETCD and start microservice. |
-| Prometheus | Start prometheus client at client side and push metrics to pushgateway as needed. |
-| Swagger | Builtin swagger UI handler. |
-| CommonService | List of common APIs. |
-| TV | A Web UI shows microservice and environment information. |
-| StaticFileHandler | A Web UI shows files could be downloaded from server, currently support source of local and pkger. |
+| Instance          | Description                                                                                                   |
+|-------------------|---------------------------------------------------------------------------------------------------------------|
+| Echo              | Compatible with original [labstack/echo](https://github.com/labstack/echo) service functionalities            |
+| Config            | Configure [spf13/viper](https://github.com/spf13/viper) as config instance and reference it from YAML         |
+| Logger            | Configure [uber-go/zap](https://github.com/uber-go/zap) logger configuration and reference it from YAML       |
+| Event             | Configure logging of RPC with [rk-query](https://github.com/rookie-ninja/rk-query) and reference it from YAML |
+| Cert              | Fetch TLS/SSL certificates start microservice.                                                                |
+| Prometheus        | Start prometheus client at client side and push metrics to pushgateway as needed.                             |
+| Swagger           | Builtin swagger UI handler.                                                                                   |
+| Docs              | Builtin [RapiDoc](https://github.com/mrin9/RapiDoc) instance which can be used to replace swagger and RK TV.  |
+| CommonService     | List of common APIs.                                                                                          |
+| StaticFileHandler | A Web UI shows files could be downloaded from server, currently support source of local and pkger.            |
 
 ## Supported middlewares
 All middlewares could be configured via YAML or Code.
 
 **User can enable anyone of those as needed! No mandatory binding!**
 
-| Middleware | Description |
-| --- | --- |
-| Metrics | Collect RPC metrics and export to [prometheus](https://github.com/prometheus/client_golang) client. |
-| Log | Log every RPC requests as event with [rk-query](https://github.com/rookie-ninja/rk-query). |
-| Trace | Collect RPC trace and export it to stdout, file or jaeger with [open-telemetry/opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go). |
-| Panic | Recover from panic for RPC requests and log it. |
-| Meta | Send micsroservice metadata as header to client. |
-| Auth | Support [Basic Auth] and [API Key] authorization types. |
-| RateLimit | Limiting RPC rate globally or per path. |
-| Timeout | Timing out request by configuration. |
-| Gzip | Compress and Decompress message body based on request header with gzip format . |
-| CORS | Server side CORS validation. |
-| JWT | Server side JWT validation. |
-| Secure | Server side secure validation. |
-| CSRF | Server side csrf validation. |
+| Middleware | Description                                                                                                                                           |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Prom       | Collect RPC metrics and export to [prometheus](https://github.com/prometheus/client_golang) client.                                                   |
+| Logging    | Log every RPC requests as event with [rk-query](https://github.com/rookie-ninja/rk-query).                                                            |
+| Trace      | Collect RPC trace and export it to stdout, file or jaeger with [open-telemetry/opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go). |
+| Panic      | Recover from panic for RPC requests and log it.                                                                                                       |
+| Meta       | Send micsro service metadata as header to client.                                                                                                     |
+| Auth       | Support [Basic Auth] and [API Key] authorization types.                                                                                               |
+| RateLimit  | Limiting RPC rate globally or per path.                                                                                                               |
+| Timeout    | Timing out request by configuration.                                                                                                                  |
+| Gzip       | Compress and Decompress message body based on request header with gzip format .                                                                       |
+| CORS       | Server side CORS validation.                                                                                                                          |
+| JWT        | Server side JWT validation.                                                                                                                           |
+| Secure     | Server side secure validation.                                                                                                                        |
+| CSRF       | Server side csrf validation.                                                                                                                          |
+
 
 ## Installation
 `go get github.com/rookie-ninja/rk-echo`
@@ -118,11 +67,12 @@ In the bellow example, we will start microservice with bellow functionality and 
 
 - [labstack/echo](https://github.com/labstack/echo) server
 - Swagger UI
+- Docs
 - CommonService
-- TV
 - Prometheus Metrics (middleware)
 - Logging (middleware)
 - Meta (middleware)
+
 
 Please refer example at [example/boot/simple](example/boot/simple).
 
@@ -135,18 +85,18 @@ echo:
   - name: greeter                     # Required
     port: 8080                        # Required
     enabled: true                     # Required
-    tv:
-      enabled: true                   # Optional, default: false
-    prom:
+    commonService:                    # Optional
       enabled: true                   # Optional, default: false
     sw:                               # Optional
       enabled: true                   # Optional, default: false
-    commonService:                    # Optional
+    docs:                             # Optional
       enabled: true                   # Optional, default: false
-    interceptors:
-      loggingZap:
+    prom:
+      enabled: true                   # Optional, default: false
+    middleware:
+      logging:
         enabled: true
-      metricsProm:
+      prom:
         enabled: true
       meta:
         enabled: true
@@ -164,22 +114,46 @@ package main
 
 import (
 	"context"
+	"embed"
+	_ "embed"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/boot"
-	"github.com/rookie-ninja/rk-entry/entry"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
 	"net/http"
 )
+
+// How to use embed.FS for:
+//
+// - boot.yaml
+// - rkentry.DocsEntryType
+// - rkentry.SWEntryType
+// - rkentry.StaticFileHandlerEntryType
+// - rkentry.CertEntry
+//
+// If we use embed.FS, then we only need one single binary file while packing.
+// We suggest use embed.FS to pack swagger local file since rk-entry would use os.Getwd() to look for files
+// if relative path was provided.
+//
+//go:embed docs
+var docsFS embed.FS
+
+func init() {
+	rkentry.GlobalAppCtx.AddEmbedFS(rkentry.SWEntryType, "greeter", &docsFS)
+}
+
+//go:embed boot.yaml
+var boot []byte
 
 // @title RK Swagger for Echo
 // @version 1.0
 // @description This is a greeter service with rk-boot.
 func main() {
-	// Bootstrap basic entries from boot config.
-	rkentry.RegisterInternalEntriesFromConfig("example/boot/simple/boot.yaml")
+	// Bootstrap preload entries
+	rkentry.BootstrapPreloadEntryYAML(boot)
 
 	// Bootstrap echo entry from boot config
-	res := rkecho.RegisterEchoEntriesWithConfig("example/boot/simple/boot.yaml")
+	res := rkecho.RegisterEchoEntryYAML(boot)
 
 	// Get EchoEntry
 	echoEntry := res["greeter"].(*rkecho.EchoEntry)
@@ -196,6 +170,7 @@ func main() {
 	echoEntry.Interrupt(context.Background())
 }
 
+// Greeter handler
 // @Summary Greeter service
 // @Id 1
 // @version 1.0
@@ -209,7 +184,6 @@ func Greeter(ctx echo.Context) error {
 	})
 }
 
-// Response.
 type GreeterResponse struct {
 	Message string
 }
@@ -227,33 +201,41 @@ Try to test Echo Service with [curl](https://curl.se/)
 
 ```shell script
 # Curl to common service
-$ curl localhost:8080/rk/v1/healthy
-{"healthy":true}
+$ curl localhost:8080/rk/v1/ready
+{
+  "ready": true
+}
+
+$ curl localhost:8080/rk/v1/alive
+{
+  "alive": true
+}
 ```
 
 #### 4.2 Swagger UI
-Please refer [documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/basic/swagger-ui/) for details of configuration.
+Please refer **sw** section at [Full YAML](#full-yaml).
 
 By default, we could access swagger UI at [http://localhost:8080/sw](http://localhost:8080/sw)
 
 ![sw](docs/img/simple-sw.png)
 
-#### 4.3 TV
-Please refer [documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/basic/tv/) for details of configuration.
+#### 4.3 Docs UI
+Please refer **docs** section at [Full YAML](#full-yaml).
 
-By default, we could access TV at [http://localhost:8080/rk/v1/tv](http://localhost:8080/rk/v1/tv)
+By default, we could access docs UI at [http://localhost:8080/docs](http://localhost:8080/docs)
 
-![tv](docs/img/simple-tv.png)
+![docs](docs/img/simple-docs.png)
 
 #### 4.4 Prometheus Metrics
-Please refer [documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/basic/middleware-metrics/) for details of configuration.
+Please refer **middleware.prom** section at [Full YAML](#full-yaml).
 
 By default, we could access prometheus client at [http://localhost:8080/metrics](http://localhost:8080/metrics)
+- http://localhost:8080/metrics
 
 ![prom](docs/img/simple-prom.png)
 
 #### 4.5 Logging
-Please refer [documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/basic/middleware-logging/) for details of configuration.
+Please refer **middleware.logging** section at [Full YAML](#full-yaml).
 
 By default, we enable zap logger and event logger with encoding type of [console]. Encoding type of [json] is also supported.
 
@@ -280,12 +262,12 @@ EOE
 ```
 
 #### 4.6 Meta
-Please refer [documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/basic/middleware-meta/) for details of configuration.
+Please refer **meta** section at [Full YAML](#full-yaml).
 
 By default, we will send back some metadata to client including gateway with headers.
 
 ```shell script
-$ curl -vs localhost:8080/rk/v1/healthy
+$ curl -vs localhost:8080/rk/v1/ready
 ...
 < HTTP/1.1 200 OK
 < Content-Type: application/json; charset=utf-8
@@ -360,114 +342,115 @@ Access [http://localhost:8080/metrics](http://localhost:8080/metrics)
 User can start multiple [labstack/echo](https://github.com/labstack/echo) instances at the same time. Please make sure use different port and name.
 
 ### Echo
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.name | The name of echo server | string | N/A |
-| echo.port | The port of echo server | integer | nil, server won't start |
-| echo.enabled | Enable echo entry or not | bool | false |
-| echo.description | Description of echo entry. | string | "" |
-| echo.cert.ref | Reference of cert entry declared in [cert entry](https://github.com/rookie-ninja/rk-entry#certentry) | string | "" |
-| echo.logger.zapLogger | Reference of zapLoggerEntry declared in [zapLoggerEntry](https://github.com/rookie-ninja/rk-entry#zaploggerentry) | string | "" |
-| echo.logger.eventLogger | Reference of eventLoggerEntry declared in [eventLoggerEntry](https://github.com/rookie-ninja/rk-entry#eventloggerentry) | string | "" |
+| name             | description                                                                                                        | type    | default value           |
+|------------------|--------------------------------------------------------------------------------------------------------------------|---------|-------------------------|
+| echo.name        | Required, The name of echo server                                                                                  | string  | N/A                     |
+| echo.port        | Required, The port of echo server                                                                                  | integer | nil, server won't start |
+| echo.enabled     | Optional, Enable echo entry or not                                                                                 | bool    | false                   |
+| echo.description | Optional, Description of echo entry.                                                                               | string  | ""                      |
+| echo.certEntry   | Optional, Reference of certEntry declared in [cert entry](https://github.com/rookie-ninja/rk-entry#certentry)      | string  | ""                      |
+| echo.loggerEntry | Optional, Reference of loggerEntry declared in [LoggerEntry](https://github.com/rookie-ninja/rk-entry#loggerentry) | string  | ""                      |
+| echo.eventEntry  | Optional, Reference of eventLEntry declared in [eventEntry](https://github.com/rookie-ninja/rk-entry#evententry)   | string  | ""                      |
 
 ### CommonService
-| Path | Description |
-| ---- | ---- |
-| /rk/v1/apis | List APIs in current EchoEntry. |
-| /rk/v1/certs | List CertEntry. |
-| /rk/v1/configs | List ConfigEntry. |
-| /rk/v1/deps | List dependencies related application, entire contents of go.mod file would be returned. |
-| /rk/v1/entries | List all Entries. |
-| /rk/v1/gc | Trigger GC |
-| /rk/v1/healthy | Get application healthy status. |
-| /rk/v1/info | Get application and process info. |
-| /rk/v1/license | Get license related application, entire contents of LICENSE file would be returned. |
-| /rk/v1/logs | List logger related entries. |
-| /rk/v1/git | Get git information. |
-| /rk/v1/readme | Get contents of README file. |
-| /rk/v1/req | List prometheus metrics of requests. |
-| /rk/v1/sys | Get OS stat. |
-| /rk/v1/tv | Get HTML page of /tv. |
+| Path         | Description                       |
+|--------------|-----------------------------------|
+| /rk/v1/gc    | Trigger GC                        |
+| /rk/v1/ready | Get application readiness status. |
+| /rk/v1/alive | Get application aliveness status. |
+| /rk/v1/info  | Get application and process info. |
 
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.commonService.enabled | Enable embedded common service | boolean | false |
+| name                          | description                             | type    | default value |
+|-------------------------------|-----------------------------------------|---------|---------------|
+| echo.commonService.enabled    | Optional, Enable builtin common service | boolean | false         |
+| echo.commonService.pathPrefix | Optional, Provide path prefix           | string  | /rk/v1        |
 
 ### Swagger
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.sw.enabled | Enable swagger service over echo server | boolean | false |
-| echo.sw.path | The path access swagger service from web | string | /sw |
-| echo.sw.jsonPath | Where the swagger.json files are stored locally | string | "" |
-| echo.sw.headers | Headers would be sent to caller as scheme of [key:value] | []string | [] |
+| name             | description                                                        | type     | default value |
+|------------------|--------------------------------------------------------------------|----------|---------------|
+| echo.sw.enabled  | Optional, Enable swagger service over gin server                   | boolean  | false         |
+| echo.sw.path     | Optional, The path access swagger service from web                 | string   | /sw           |
+| echo.sw.jsonPath | Optional, Where the swagger.json files are stored locally          | string   | ""            |
+| echo.sw.headers  | Optional, Headers would be sent to caller as scheme of [key:value] | []string | []            |
+
+### Docs (RapiDoc)
+| name                  | description                                                                            | type     | default value |
+|-----------------------|----------------------------------------------------------------------------------------|----------|---------------|
+| echo.docs.enabled     | Optional, Enable RapiDoc service over gin server                                       | boolean  | false         |
+| echo.docs.path        | Optional, The path access docs service from web                                        | string   | /docs         |
+| echo.docs.jsonPath    | Optional, Where the swagger.json or open API files are stored locally                  | string   | ""            |
+| echo.docs.headers     | Optional, Headers would be sent to caller as scheme of [key:value]                     | []string | []            |
+| echo.docs.style.theme | Optional, light and dark are supported options                                         | string   | []            |
+| echo.docs.debug       | Optional, Enable debugging mode in RapiDoc which can be used as the same as Swagger UI | boolean  | false         |
 
 ### Prometheus Client
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.prom.enabled | Enable prometheus | boolean | false |
-| echo.prom.path | Path of prometheus | string | /metrics |
-| echo.prom.pusher.enabled | Enable prometheus pusher | bool | false |
-| echo.prom.pusher.jobName | Job name would be attached as label while pushing to remote pushgateway | string | "" |
-| echo.prom.pusher.remoteAddress | PushGateWay address, could be form of http://x.x.x.x or x.x.x.x | string | "" |
-| echo.prom.pusher.intervalMs | Push interval in milliseconds | string | 1000 |
-| echo.prom.pusher.basicAuth | Basic auth used to interact with remote pushgateway, form of [user:pass] | string | "" |
-| echo.prom.pusher.cert.ref | Reference of rkentry.CertEntry | string | "" |
-
-### TV
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.tv.enabled | Enable RK TV | boolean | false |
+| name                           | description                                                                        | type    | default value |
+|--------------------------------|------------------------------------------------------------------------------------|---------|---------------|
+| echo.prom.enabled              | Optional, Enable prometheus                                                        | boolean | false         |
+| echo.prom.path                 | Optional, Path of prometheus                                                       | string  | /metrics      |
+| echo.prom.pusher.enabled       | Optional, Enable prometheus pusher                                                 | bool    | false         |
+| echo.prom.pusher.jobName       | Optional, Job name would be attached as label while pushing to remote pushgateway  | string  | ""            |
+| echo.prom.pusher.remoteAddress | Optional, PushGateWay address, could be form of http://x.x.x.x or x.x.x.x          | string  | ""            |
+| echo.prom.pusher.intervalMs    | Optional, Push interval in milliseconds                                            | string  | 1000          |
+| echo.prom.pusher.basicAuth     | Optional, Basic auth used to interact with remote pushgateway, form of [user:pass] | string  | ""            |
+| echo.prom.pusher.certEntry     | Optional, Reference of rkentry.CertEntry                                           | string  | ""            |
 
 ### Static file handler
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.static.enabled | Optional, Enable static file handler | boolean | false |
-| echo.static.path | Optional, path of static file handler | string | /rk/v1/static |
-| echo.static.sourceType | Required, local and pkger supported | string | "" |
-| echo.static.sourcePath | Required, full path of source directory | string | "" |
+| name                   | description                             | type    | default value |
+|------------------------|-----------------------------------------|---------|---------------|
+| echo.static.enabled    | Optional, Enable static file handler    | boolean | false         |
+| echo.static.path       | Optional, path of static file handler   | string  | /rk/v1/static |
+| echo.static.sourceType | Required, local and pkger supported     | string  | ""            |
+| echo.static.sourcePath | Required, full path of source directory | string  | ""            |
 
-- About [pkger](https://github.com/markbates/pkger)
-User can use pkger command line tool to embed static files into .go files.
+- About embed.FS
+  User has to set embedFS before Bootstrap() function as bellow:
+-
+```go
+//go:embed /*
+var staticFS embed.FS
 
-Please use sourcePath like: github.com/rookie-ninja/rk-echo:/boot/assets
+rkentry.GlobalAppCtx.AddEmbedFS(rkentry.StaticFileHandlerEntryType, "greeter", &staticFS)
+```
 
 ### Middlewares
 #### Log
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.loggingZap.enabled | Enable log interceptor | boolean | false |
-| echo.interceptors.loggingZap.zapLoggerEncoding | json or console | string | console |
-| echo.interceptors.loggingZap.zapLoggerOutputPaths | Output paths | []string | stdout |
-| echo.interceptors.loggingZap.eventLoggerEncoding | json or console | string | console |
-| echo.interceptors.loggingZap.eventLoggerOutputPaths | Output paths | []string | false |
+| name                                      | description                                            | type     | default value |
+|-------------------------------------------|--------------------------------------------------------|----------|---------------|
+| echo.middleware.logging.enabled           | Enable log middleware                                  | boolean  | false         |
+| echo.middleware.logging.ignore            | The paths of prefix that will be ignored by middleware | []string | []            |
+| echo.middleware.logging.loggerEncoding    | json or console or flatten                             | string   | console       |
+| echo.middleware.logging.loggerOutputPaths | Output paths                                           | []string | stdout        |
+| echo.middleware.logging.eventEncoding     | json or console or flatten                             | string   | console       |
+| echo.middleware.logging.eventOutputPaths  | Output paths                                           | []string | false         |
 
 We will log two types of log for every RPC call.
-- zapLogger
+- Logger
 
 Contains user printed logging with requestId or traceId.
 
-- eventLogger
+- Event
 
 Contains per RPC metadata, response information, environment information and etc.
 
-| Field | Description |
-| ---- | ---- |
-| endTime | As name described |
-| startTime | As name described |
-| elapsedNano | Elapsed time for RPC in nanoseconds |
-| timezone | As name described |
-| ids | Contains three different ids(eventId, requestId and traceId). If meta interceptor was enabled or event.SetRequestId() was called by user, then requestId would be attached. eventId would be the same as requestId if meta interceptor was enabled. If trace interceptor was enabled, then traceId would be attached. |
-| app | Contains [appName, appVersion](https://github.com/rookie-ninja/rk-entry#appinfoentry), entryName, entryType. |
-| env | Contains arch, az, domain, hostname, localIP, os, realm, region. realm, region, az, domain were retrieved from environment variable named as REALM, REGION, AZ and DOMAIN. "*" means empty environment variable.|
-| payloads | Contains RPC related metadata |
-| error | Contains errors if occur |
-| counters | Set by calling event.SetCounter() by user. |
-| pairs | Set by calling event.AddPair() by user. |
-| timing | Set by calling event.StartTimer() and event.EndTimer() by user. |
-| remoteAddr |  As name described |
-| operation | RPC method name |
-| resCode | Response code of RPC |
-| eventStatus | Ended or InProgress |
+| Field       | Description                                                                                                                                                                                                                                                                                                           |
+|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| endTime     | As name described                                                                                                                                                                                                                                                                                                     |
+| startTime   | As name described                                                                                                                                                                                                                                                                                                     |
+| elapsedNano | Elapsed time for RPC in nanoseconds                                                                                                                                                                                                                                                                                   |
+| timezone    | As name described                                                                                                                                                                                                                                                                                                     |
+| ids         | Contains three different ids(eventId, requestId and traceId). If meta interceptor was enabled or event.SetRequestId() was called by user, then requestId would be attached. eventId would be the same as requestId if meta interceptor was enabled. If trace interceptor was enabled, then traceId would be attached. |
+| app         | Contains [appName, appVersion](https://github.com/rookie-ninja/rk-entry#appinfoentry), entryName, entryType.                                                                                                                                                                                                          |
+| env         | Contains arch, az, domain, hostname, localIP, os, realm, region. realm, region, az, domain were retrieved from environment variable named as REALM, REGION, AZ and DOMAIN. "*" means empty environment variable.                                                                                                      |
+| payloads    | Contains RPC related metadata                                                                                                                                                                                                                                                                                         |
+| error       | Contains errors if occur                                                                                                                                                                                                                                                                                              |
+| counters    | Set by calling event.SetCounter() by user.                                                                                                                                                                                                                                                                            |
+| pairs       | Set by calling event.AddPair() by user.                                                                                                                                                                                                                                                                               |
+| timing      | Set by calling event.StartTimer() and event.EndTimer() by user.                                                                                                                                                                                                                                                       |
+| remoteAddr  | As name described                                                                                                                                                                                                                                                                                                     |
+| operation   | RPC method name                                                                                                                                                                                                                                                                                                       |
+| resCode     | Response code of RPC                                                                                                                                                                                                                                                                                                  |
+| eventStatus | Ended or InProgress                                                                                                                                                                                                                                                                                                   |
 
 - example
 
@@ -492,76 +475,83 @@ eventStatus=Ended
 EOE
 ```
 
-#### Metrics
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.metricsProm.enabled | Enable metrics interceptor | boolean | false |
+#### Prometheus
+| name                         | description                                            | type     | default value |
+|------------------------------|--------------------------------------------------------|----------|---------------|
+| echo.middleware.prom.enabled | Enable metrics middleware                              | boolean  | false         |
+| echo.middleware.prom.ignore  | The paths of prefix that will be ignored by middleware | []string | []            |
 
 #### Auth
 Enable the server side auth. codes.Unauthenticated would be returned to client if not authorized with user defined credential.
 
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.auth.enabled | Enable auth interceptor | boolean | false |
-| echo.interceptors.auth.basic | Basic auth credentials as scheme of <user:pass> | []string | [] |
-| echo.interceptors.auth.apiKey | API key auth | []string | [] |
-| echo.interceptors.auth.ignorePrefix | The paths of prefix that will be ignored by interceptor | []string | [] |
+| name                         | description                                            | type     | default value |
+|------------------------------|--------------------------------------------------------|----------|---------------|
+| echo.middleware.auth.enabled | Enable auth middleware                                 | boolean  | false         |
+| echo.middleware.auth.ignore  | The paths of prefix that will be ignored by middleware | []string | []            |
+| echo.middleware.auth.basic   | Basic auth credentials as scheme of <user:pass>        | []string | []            |
+| echo.middleware.auth.apiKey  | API key auth                                           | []string | []            |
 
 #### Meta
 Send application metadata as header to client.
 
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.meta.enabled | Enable meta interceptor | boolean | false |
-| echo.interceptors.meta.prefix | Header key was formed as X-<Prefix>-XXX | string | RK |
+| name                         | description                                            | type     | default value |
+|------------------------------|--------------------------------------------------------|----------|---------------|
+| echo.middleware.meta.enabled | Enable meta middleware                                 | boolean  | false         |
+| echo.middleware.meta.ignore  | The paths of prefix that will be ignored by middleware | []string | []            |
+| echo.middleware.meta.prefix  | Header key was formed as X-<Prefix>-XXX                | string   | RK            |
 
 #### Tracing
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.tracingTelemetry.enabled | Enable tracing interceptor | boolean | false |
-| echo.interceptors.tracingTelemetry.exporter.file.enabled | Enable file exporter | boolean | RK |
-| echo.interceptors.tracingTelemetry.exporter.file.outputPath | Export tracing info to files | string | stdout |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.agent.enabled | Export tracing info to jaeger agent | boolean | false |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.agent.host | As name described | string | localhost |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.agent.port | As name described | int | 6831 |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.collector.enabled | Export tracing info to jaeger collector | boolean | false |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.collector.endpoint | As name described | string | http://localhost:16368/api/trace |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.collector.username | As name described | string | "" |
-| echo.interceptors.tracingTelemetry.exporter.jaeger.collector.password | As name described | string | "" |
+| name                                                     | description                                            | type     | default value                    |
+|----------------------------------------------------------|--------------------------------------------------------|----------|----------------------------------|
+| echo.middleware.trace.enabled                            | Enable tracing middleware                              | boolean  | false                            |
+| echo.middleware.trace.ignore                             | The paths of prefix that will be ignored by middleware | []string | []                               |
+| echo.middleware.trace.exporter.file.enabled              | Enable file exporter                                   | boolean  | false                            |
+| echo.middleware.trace.exporter.file.outputPath           | Export tracing info to files                           | string   | stdout                           |
+| echo.middleware.trace.exporter.jaeger.agent.enabled      | Export tracing info to jaeger agent                    | boolean  | false                            |
+| echo.middleware.trace.exporter.jaeger.agent.host         | As name described                                      | string   | localhost                        |
+| echo.middleware.trace.exporter.jaeger.agent.port         | As name described                                      | int      | 6831                             |
+| echo.middleware.trace.exporter.jaeger.collector.enabled  | Export tracing info to jaeger collector                | boolean  | false                            |
+| echo.middleware.trace.exporter.jaeger.collector.endpoint | As name described                                      | string   | http://localhost:16368/api/trace |
+| echo.middleware.trace.exporter.jaeger.collector.username | As name described                                      | string   | ""                               |
+| echo.middleware.trace.exporter.jaeger.collector.password | As name described                                      | string   | ""                               |
 
 #### RateLimit
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.rateLimit.enabled | Enable rate limit interceptor | boolean | false |
-| echo.interceptors.rateLimit.algorithm | Provide algorithm, tokenBucket and leakyBucket are available options | string | tokenBucket |
-| echo.interceptors.rateLimit.reqPerSec | Request per second globally | int | 0 |
-| echo.interceptors.rateLimit.paths.path | Full path | string | "" |
-| echo.interceptors.rateLimit.paths.reqPerSec | Request per second by full path | int | 0 |
+| name                                      | description                                                          | type     | default value |
+|-------------------------------------------|----------------------------------------------------------------------|----------|---------------|
+| echo.middleware.rateLimit.enabled         | Enable rate limit middleware                                         | boolean  | false         |
+| echo.middleware.rateLimit.ignore          | The paths of prefix that will be ignored by middleware               | []string | []            |
+| echo.middleware.rateLimit.algorithm       | Provide algorithm, tokenBucket and leakyBucket are available options | string   | tokenBucket   |
+| echo.middleware.rateLimit.reqPerSec       | Request per second globally                                          | int      | 0             |
+| echo.middleware.rateLimit.paths.path      | Full path                                                            | string   | ""            |
+| echo.middleware.rateLimit.paths.reqPerSec | Request per second by full path                                      | int      | 0             |
 
 #### Timeout
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.timeout.enabled | Enable timeout interceptor | boolean | false |
-| echo.interceptors.timeout.timeoutMs | Global timeout in milliseconds. | int | 5000 |
-| echo.interceptors.timeout.paths.path | Full path | string | "" |
-| echo.interceptors.timeout.paths.timeoutMs | Timeout in milliseconds by full path | int | 5000 |
+| name                                    | description                                            | type     | default value |
+|-----------------------------------------|--------------------------------------------------------|----------|---------------|
+| echo.middleware.timeout.enabled         | Enable timeout middleware                              | boolean  | false         |
+| echo.middleware.timeout.ignore          | The paths of prefix that will be ignored by middleware | []string | []            |
+| echo.middleware.timeout.timeoutMs       | Global timeout in milliseconds.                        | int      | 5000          |
+| echo.middleware.timeout.paths.path      | Full path                                              | string   | ""            |
+| echo.middleware.timeout.paths.timeoutMs | Timeout in milliseconds by full path                   | int      | 5000          |
 
 #### Gzip
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.gzip.enabled | Enable gzip interceptor | boolean | false |
-| echo.interceptors.gzip.level | Provide level of compression, options are noCompression, bestSpeed, bestCompression, defaultCompression, huffmanOnly. | string | defaultCompression |
+| name                         | description                                                                                                           | type     | default value      |
+|------------------------------|-----------------------------------------------------------------------------------------------------------------------|----------|--------------------|
+| echo.middleware.gzip.enabled | Enable gzip middleware                                                                                                | boolean  | false              |
+| echo.middleware.gzip.ignore  | The paths of prefix that will be ignored by middleware                                                                | []string | []                 |
+| echo.middleware.gzip.level   | Provide level of compression, options are noCompression, bestSpeed, bestCompression, defaultCompression, huffmanOnly. | string   | defaultCompression |
 
 #### CORS
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.cors.enabled | Enable cors interceptor | boolean | false |
-| echo.interceptors.cors.allowOrigins | Provide allowed origins with wildcard enabled. | []string | * |
-| echo.interceptors.cors.allowMethods | Provide allowed methods returns as response header of OPTIONS request. | []string | All http methods |
-| echo.interceptors.cors.allowHeaders | Provide allowed headers returns as response header of OPTIONS request. | []string | Headers from request |
-| echo.interceptors.cors.allowCredentials | Returns as response header of OPTIONS request. | bool | false |
-| echo.interceptors.cors.exposeHeaders | Provide exposed headers returns as response header of OPTIONS request. | []string | "" |
-| echo.interceptors.cors.maxAge | Provide max age returns as response header of OPTIONS request. | int | 0 |
+| name                                  | description                                                            | type     | default value        |
+|---------------------------------------|------------------------------------------------------------------------|----------|----------------------|
+| echo.middleware.cors.enabled          | Enable cors middleware                                                 | boolean  | false                |
+| echo.middleware.cors.ignore           | The paths of prefix that will be ignored by middleware                 | []string | []                   |
+| echo.middleware.cors.allowOrigins     | Provide allowed origins with wildcard enabled.                         | []string | *                    |
+| echo.middleware.cors.allowMethods     | Provide allowed methods returns as response header of OPTIONS request. | []string | All http methods     |
+| echo.middleware.cors.allowHeaders     | Provide allowed headers returns as response header of OPTIONS request. | []string | Headers from request |
+| echo.middleware.cors.allowCredentials | Returns as response header of OPTIONS request.                         | bool     | false                |
+| echo.middleware.cors.exposeHeaders    | Provide exposed headers returns as response header of OPTIONS request. | []string | ""                   |
+| echo.middleware.cors.maxAge           | Provide max age returns as response header of OPTIONS request.         | int      | 0                    |
 
 #### JWT
 In order to make swagger UI and RK tv work under JWT without JWT token, we need to ignore prefixes of paths as bellow.
@@ -569,21 +559,19 @@ In order to make swagger UI and RK tv work under JWT without JWT token, we need 
 ```yaml
 jwt:
   ...
-  ignorePrefix:
-   - "/rk/v1/tv"
-   - "/sw"
-   - "/rk/v1/assets"
+  ignore:
+    - "/sw"
 ```
 
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.jwt.enabled | Enable JWT interceptor | boolean | false |
-| echo.interceptors.jwt.signingKey | Required, Provide signing key. | string | "" |
-| echo.interceptors.jwt.ignorePrefix | Provide ignoring path prefix. | []string | [] |
-| echo.interceptors.jwt.signingKeys | Provide signing keys as scheme of <key>:<value>. | []string | [] |
-| echo.interceptors.jwt.signingAlgo | Provide signing algorithm. | string | HS256 |
-| echo.interceptors.jwt.tokenLookup | Provide token lookup scheme, please see bellow description. | string | "header:Authorization" |
-| echo.interceptors.jwt.authScheme | Provide auth scheme. | string | Bearer |
+| name                            | description                                                 | type     | default value          |
+|---------------------------------|-------------------------------------------------------------|----------|------------------------|
+| echo.middleware.jwt.enabled     | Enable JWT middleware                                       | boolean  | false                  |
+| echo.middleware.jwt.ignore      | Provide ignoring path prefix.                               | []string | []                     |
+| echo.middleware.jwt.signingKey  | Required, Provide signing key.                              | string   | ""                     |
+| echo.middleware.jwt.signingKeys | Provide signing keys as scheme of <key>:<value>.            | []string | []                     |
+| echo.middleware.jwt.signingAlgo | Provide signing algorithm.                                  | string   | HS256                  |
+| echo.middleware.jwt.tokenLookup | Provide token lookup scheme, please see bellow description. | string   | "header:Authorization" |
+| echo.middleware.jwt.authScheme  | Provide auth scheme.                                        | string   | Bearer                 |
 
 The supported scheme of **tokenLookup** 
 
@@ -600,47 +588,79 @@ The supported scheme of **tokenLookup**
 ```
 
 #### Secure
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.secure.enabled | Enable secure interceptor | boolean | false |
-| echo.interceptors.secure.xssProtection | X-XSS-Protection header value. | string | "1; mode=block" |
-| echo.interceptors.secure.contentTypeNosniff | X-Content-Type-Options header value. | string | nosniff |
-| echo.interceptors.secure.xFrameOptions | X-Frame-Options header value. | string | SAMEORIGIN |
-| echo.interceptors.secure.hstsMaxAge | Strict-Transport-Security header value. | int | 0 |
-| echo.interceptors.secure.hstsExcludeSubdomains | Excluding subdomains of HSTS. | bool | false |
-| echo.interceptors.secure.hstsPreloadEnabled | Enabling HSTS preload. | bool | false |
-| echo.interceptors.secure.contentSecurityPolicy | Content-Security-Policy header value. | string | "" |
-| echo.interceptors.secure.cspReportOnly | Content-Security-Policy-Report-Only header value. | bool | false |
-| echo.interceptors.secure.referrerPolicy | Referrer-Policy header value. | string | "" |
-| echo.interceptors.secure.ignorePrefix | Ignoring path prefix. | []string | [] |
+| name                                         | description                                       | type     | default value   |
+|----------------------------------------------|---------------------------------------------------|----------|-----------------|
+| echo.middleware.secure.enabled               | Enable secure middleware                          | boolean  | false           |
+| echo.middleware.secure.ignore                | Ignoring path prefix.                             | []string | []              |
+| echo.middleware.secure.xssProtection         | X-XSS-Protection header value.                    | string   | "1; mode=block" |
+| echo.middleware.secure.contentTypeNosniff    | X-Content-Type-Options header value.              | string   | nosniff         |
+| echo.middleware.secure.xFrameOptions         | X-Frame-Options header value.                     | string   | SAMEORIGIN      |
+| echo.middleware.secure.hstsMaxAge            | Strict-Transport-Security header value.           | int      | 0               |
+| echo.middleware.secure.hstsExcludeSubdomains | Excluding subdomains of HSTS.                     | bool     | false           |
+| echo.middleware.secure.hstsPreloadEnabled    | Enabling HSTS preload.                            | bool     | false           |
+| echo.middleware.secure.contentSecurityPolicy | Content-Security-Policy header value.             | string   | ""              |
+| echo.middleware.secure.cspReportOnly         | Content-Security-Policy-Report-Only header value. | bool     | false           |
+| echo.middleware.secure.referrerPolicy        | Referrer-Policy header value.                     | string   | ""              |
 
 #### CSRF
-| name | description | type | default value |
-| ------ | ------ | ------ | ------ |
-| echo.interceptors.csrf.enabled | Enable csrf interceptor | boolean | false |
-| echo.interceptors.csrf.tokenLength | Provide the length of the generated token. | int | 32 |
-| echo.interceptors.csrf.tokenLookup | Provide csrf token lookup rules, please see code comments for details. | string | "header:X-CSRF-Token" |
-| echo.interceptors.csrf.cookieName | Provide name of the CSRF cookie. This cookie will store CSRF token. | string | _csrf |
-| echo.interceptors.csrf.cookieDomain | Domain of the CSRF cookie. | string | "" |
-| echo.interceptors.csrf.cookiePath | Path of the CSRF cookie. | string | "" |
-| echo.interceptors.csrf.cookieMaxAge | Provide max age (in seconds) of the CSRF cookie. | int | 86400 |
-| echo.interceptors.csrf.cookieHttpOnly | Indicates if CSRF cookie is HTTP only. | bool | false |
-| echo.interceptors.csrf.cookieSameSite | Indicates SameSite mode of the CSRF cookie. Options: lax, strict, none, default | string | default |
-| echo.interceptors.csrf.ignorePrefix | Ignoring path prefix. | []string | [] |
+| name                                | description                                                                     | type     | default value         |
+|-------------------------------------|---------------------------------------------------------------------------------|----------|-----------------------|
+| echo.middleware.csrf.enabled        | Enable csrf middleware                                                          | boolean  | false                 |
+| echo.middleware.csrf.ignore         | Ignoring path prefix.                                                           | []string | []                    |
+| echo.middleware.csrf.tokenLength    | Provide the length of the generated token.                                      | int      | 32                    |
+| echo.middleware.csrf.tokenLookup    | Provide csrf token lookup rules, please see code comments for details.          | string   | "header:X-CSRF-Token" |
+| echo.middleware.csrf.cookieName     | Provide name of the CSRF cookie. This cookie will store CSRF token.             | string   | _csrf                 |
+| echo.middleware.csrf.cookieDomain   | Domain of the CSRF cookie.                                                      | string   | ""                    |
+| echo.middleware.csrf.cookiePath     | Path of the CSRF cookie.                                                        | string   | ""                    |
+| echo.middleware.csrf.cookieMaxAge   | Provide max age (in seconds) of the CSRF cookie.                                | int      | 86400                 |
+| echo.middleware.csrf.cookieHttpOnly | Indicates if CSRF cookie is HTTP only.                                          | bool     | false                 |
+| echo.middleware.csrf.cookieSameSite | Indicates SameSite mode of the CSRF cookie. Options: lax, strict, none, default | string   | default               |
 
 ### Full YAML
 ```yaml
 ---
 #app:
+#  name: my-app                                            # Optional, default: "rk-app"
+#  version: "v1.0.0"                                       # Optional, default: "v0.0.0"
 #  description: "this is description"                      # Optional, default: ""
 #  keywords: ["rk", "golang"]                              # Optional, default: []
 #  homeUrl: "http://example.com"                           # Optional, default: ""
-#  iconUrl: "http://example.com"                           # Optional, default: ""
 #  docsUrl: ["http://example.com"]                         # Optional, default: []
 #  maintainers: ["rk-dev"]                                 # Optional, default: []
-#zapLogger:
-#  - name: zap-logger                                      # Required
+#logger:
+#  - name: my-logger                                       # Required
 #    description: "Description of entry"                   # Optional
+#    locale: "*::*::*::*"                                  # Optional, default: "*::*::*::*"
+#    zap:                                                  # Optional
+#      level: info                                         # Optional, default: info
+#      development: true                                   # Optional, default: true
+#      disableCaller: false                                # Optional, default: false
+#      disableStacktrace: true                             # Optional, default: true
+#      encoding: console                                   # Optional, default: console
+#      outputPaths: ["stdout"]                             # Optional, default: [stdout]
+#      errorOutputPaths: ["stderr"]                        # Optional, default: [stderr]
+#      encoderConfig:                                      # Optional
+#        timeKey: "ts"                                     # Optional, default: ts
+#        levelKey: "level"                                 # Optional, default: level
+#        nameKey: "logger"                                 # Optional, default: logger
+#        callerKey: "caller"                               # Optional, default: caller
+#        messageKey: "msg"                                 # Optional, default: msg
+#        stacktraceKey: "stacktrace"                       # Optional, default: stacktrace
+#        skipLineEnding: false                             # Optional, default: false
+#        lineEnding: "\n"                                  # Optional, default: \n
+#        consoleSeparator: "\t"                            # Optional, default: \t
+#      sampling:                                           # Optional, default: nil
+#        initial: 0                                        # Optional, default: 0
+#        thereafter: 0                                     # Optional, default: 0
+#      initialFields:                                      # Optional, default: empty map
+#        key: value
+#    lumberjack:                                           # Optional, default: nil
+#      filename:
+#      maxsize: 1024                                       # Optional, suggested: 1024 (MB)
+#      maxage: 7                                           # Optional, suggested: 7 (day)
+#      maxbackups: 3                                       # Optional, suggested: 3 (day)
+#      localtime: true                                     # Optional, suggested: true
+#      compress: true                                      # Optional, suggested: true
 #    loki:
 #      enabled: true                                       # Optional, default: false
 #      addr: localhost:3100                                # Optional, default: localhost:3100
@@ -652,9 +672,19 @@ The supported scheme of **tokenLookup**
 #      insecureSkipVerify: false                           # Optional, default: false
 #      labels:                                             # Optional, default: empty map
 #        my_label_key: my_label_value
-#eventLogger:
-#  - name: event-logger                                    # Required
+#event:
+#  - name: my-event                                        # Required
 #    description: "Description of entry"                   # Optional
+#    locale: "*::*::*::*"                                  # Optional, default: "*::*::*::*"
+#    encoding: console                                     # Optional, default: console
+#    outputPaths: ["stdout"]                               # Optional, default: [stdout]
+#    lumberjack:                                           # Optional, default: nil
+#      filename:
+#      maxsize: 1024                                       # Optional, suggested: 1024 (MB)
+#      maxage: 7                                           # Optional, suggested: 7 (day)
+#      maxbackups: 3                                       # Optional, suggested: 3 (day)
+#      localtime: true                                     # Optional, suggested: true
+#      compress: true                                      # Optional, suggested: true
 #    loki:
 #      enabled: true                                       # Optional, default: false
 #      addr: localhost:3100                                # Optional, default: localhost:3100
@@ -666,83 +696,86 @@ The supported scheme of **tokenLookup**
 #      insecureSkipVerify: false                           # Optional, default: false
 #      labels:                                             # Optional, default: empty map
 #        my_label_key: my_label_value
-#cred:
-#  - name: "local-cred"                                    # Required
-#    provider: "localFs"                                   # Required, etcd, consul, localFs, remoteFs are supported options
-#    description: "Description of entry"                   # Optional
-#    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
-#    paths:                                                # Optional
-#      - "example/boot/full/cred.yaml"
 #cert:
-#  - name: "local-cert"                                    # Required
-#    provider: "localFs"                                   # Required, etcd, consul, localFs, remoteFs are supported options
-#    description: "Description of entry"                   # Optional
+#  - name: my-cert                                         # Required
+#    description: "Description of entry"                   # Optional, default: ""
 #    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
-#    serverCertPath: "example/boot/full/server.pem"        # Optional, default: "", path of certificate on local FS
-#    serverKeyPath: "example/boot/full/server-key.pem"     # Optional, default: "", path of certificate on local FS
-#    clientCertPath: "example/client.pem"                  # Optional, default: "", path of certificate on local FS
-#    clientKeyPath: "example/client.pem"                   # Optional, default: "", path of certificate on local FS
+#    caPath: "certs/ca.pem"                                # Optional, default: ""
+#    certPemPath: "certs/server-cert.pem"                  # Optional, default: ""
+#    keyPemPath: "certs/server-key.pem"                    # Optional, default: ""
 #config:
-#  - name: rk-main                                         # Required
-#    path: "example/boot/full/config.yaml"                 # Required
-#    locale: "*::*::*::*"                                  # Required, default: *::*::*::*
-#    description: "Description of entry"                   # Optional
+#  - name: my-config                                       # Required
+#    description: "Description of entry"                   # Optional, default: ""
+#    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
+##    path: "config/config.yaml"                            # Optional
+#    envPrefix: ""                                         # Optional, default: ""
+#    content:                                              # Optional, defualt: empty map
+#      key: value
 echo:
   - name: greeter                                          # Required
     port: 8080                                             # Required
     enabled: true                                          # Required
 #    description: "greeter server"                         # Optional, default: ""
-#    certEntry: "local-cert"                               # Optional, default: "", reference of cert entry declared above
+#    certEntry: my-cert                                    # Optional, default: "", reference of cert entry declared above
+#    loggerEntry: my-logger                                # Optional, default: "", reference of cert entry declared above, STDOUT will be used if missing
+#    eventEntry: my-event                                  # Optional, default: "", reference of cert entry declared above, STDOUT will be used if missing
 #    sw:
 #      enabled: true                                       # Optional, default: false
 #      path: "sw"                                          # Optional, default: "sw"
 #      jsonPath: ""                                        # Optional
 #      headers: ["sw:rk"]                                  # Optional, default: []
+#    docs:
+#      enabled: true                                       # Optional, default: false
+#      path: "docs"                                        # Optional, default: "docs"
+#      specPath: ""                                        # Optional
+#      headers: ["sw:rk"]                                  # Optional, default: []
+#      style:                                              # Optional
+#        theme: "light"                                    # Optional, default: "light"
+#      debug: false                                        # Optional, default: false
 #    commonService:
 #      enabled: true                                       # Optional, default: false
+#      pathPrefix: ""                                      # Optional, default: "/rk/v1/"
 #    static:
 #      enabled: true                                       # Optional, default: false
-#      path: "/rk/v1/static"                               # Optional, default: /rk/v1/static
-#      sourceType: local                                   # Required, options: pkger, local
-#      sourcePath: "."                                     # Required, full path of source directory
-#    tv:
-#      enabled:  true                                      # Optional, default: false
+#      path: "/static"                                     # Optional, default: /static
+#      sourceType: local                                   # Optional, options: local, embed.FS can be used either, need to specify in code
+#      sourcePath: "."                                     # Optional, full path of source directory
 #    prom:
 #      enabled: true                                       # Optional, default: false
-#      path: ""                                            # Optional, default: "metrics"
+#      path: ""                                            # Optional, default: "/metrics"
 #      pusher:
 #        enabled: false                                    # Optional, default: false
 #        jobName: "greeter-pusher"                         # Required
 #        remoteAddress: "localhost:9091"                   # Required
 #        basicAuth: "user:pass"                            # Optional, default: ""
 #        intervalMs: 10000                                 # Optional, default: 1000
-#        cert:                                             # Optional
-#          ref: "local-test"                               # Optional, default: "", reference of cert entry declared above
-#    logger:
-#      zapLogger: zap-logger                               # Optional, default: logger of STDOUT, reference of logger entry declared above
-#      eventLogger: event-logger                           # Optional, default: logger of STDOUT, reference of logger entry declared above
-#    interceptors:
-#      loggingZap:
+#        certEntry: my-cert                                # Optional, default: "", reference of cert entry declared above
+#    middleware:
+#      ignore: [""]                                        # Optional, default: []
+#      logging:
 #        enabled: true                                     # Optional, default: false
-#        zapLoggerEncoding: "json"                         # Optional, default: "console"
-#        zapLoggerOutputPaths: ["logs/app.log"]            # Optional, default: ["stdout"]
-#        eventLoggerEncoding: "json"                       # Optional, default: "console"
-#        eventLoggerOutputPaths: ["logs/event.log"]        # Optional, default: ["stdout"]
-#      metricsProm:
+#        ignore: [""]                                      # Optional, default: []
+#        loggerEncoding: "console"                         # Optional, default: "console"
+#        loggerOutputPaths: ["logs/app.log"]               # Optional, default: ["stdout"]
+#        eventEncoding: "console"                          # Optional, default: "console"
+#        eventOutputPaths: ["logs/event.log"]              # Optional, default: ["stdout"]
+#      prom:
 #        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #      auth:
 #        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        basic:
 #          - "user:pass"                                   # Optional, default: []
-#        ignorePrefix:
-#          - "/rk/v1"                                      # Optional, default: []
 #        apiKey:
 #          - "keys"                                        # Optional, default: []
 #      meta:
 #        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        prefix: "rk"                                      # Optional, default: "rk"
-#      tracingTelemetry:
+#      trace:
 #        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        exporter:                                         # Optional, default will create a stdout exporter
 #          file:
 #            enabled: true                                 # Optional, default: false
@@ -759,6 +792,7 @@ echo:
 #              password: ""                                # Optional, default: ""
 #      rateLimit:
 #        enabled: false                                    # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        algorithm: "leakyBucket"                          # Optional, default: "tokenBucket"
 #        reqPerSec: 100                                    # Optional, default: 1000000
 #        paths:
@@ -766,6 +800,7 @@ echo:
 #            reqPerSec: 0                                  # Optional, default: 1000000
 #      timeout:
 #        enabled: false                                    # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        timeoutMs: 5000                                   # Optional, default: 5000
 #        paths:
 #          - path: "/rk/v1/healthy"                        # Optional, default: ""
@@ -773,10 +808,7 @@ echo:
 #      jwt:
 #        enabled: true                                     # Optional, default: false
 #        signingKey: "my-secret"                           # Required
-#        ignorePrefix:                                     # Optional, default: []
-#          - "/rk/v1/tv"
-#          - "/sw"
-#          - "/rk/v1/assets"
+#        ignore: [""]                                      # Optional, default: []
 #        signingKeys:                                      # Optional
 #          - "key:value"
 #        signingAlgo: ""                                   # Optional, default: "HS256"
@@ -784,6 +816,7 @@ echo:
 #        authScheme: "Bearer"                              # Optional, default: "Bearer"
 #      secure:
 #        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        xssProtection: ""                                 # Optional, default: "1; mode=block"
 #        contentTypeNosniff: ""                            # Optional, default: nosniff
 #        xFrameOptions: ""                                 # Optional, default: SAMEORIGIN
@@ -793,9 +826,9 @@ echo:
 #        contentSecurityPolicy: ""                         # Optional, default: ""
 #        cspReportOnly: false                              # Optional, default: false
 #        referrerPolicy: ""                                # Optional, default: ""
-#        ignorePrefix: []                                  # Optional, default: []
 #      csrf:
-#        enabled: true
+#        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        tokenLength: 32                                   # Optional, default: 32
 #        tokenLookup: "header:X-CSRF-Token"                # Optional, default: "header:X-CSRF-Token"
 #        cookieName: "_csrf"                               # Optional, default: _csrf
@@ -804,10 +837,20 @@ echo:
 #        cookieMaxAge: 86400                               # Optional, default: 86400
 #        cookieHttpOnly: false                             # Optional, default: false
 #        cookieSameSite: "default"                         # Optional, default: "default", options: lax, strict, none, default
-#        ignorePrefix: []                                  # Optional, default: []
 #      gzip:
-#        enabled: true
+#        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
 #        level: bestSpeed                                  # Optional, options: [noCompression, bestSpeed， bestCompression, defaultCompression, huffmanOnly]
+#      cors:
+#        enabled: true                                     # Optional, default: false
+#        ignore: [""]                                      # Optional, default: []
+#        allowOrigins:                                     # Optional, default: []
+#          - "http://localhost:*"                          # Optional, default: *
+#        allowCredentials: false                           # Optional, default: false
+#        allowHeaders: []                                  # Optional, default: []
+#        allowMethods: []                                  # Optional, default: []
+#        exposeHeaders: []                                 # Optional, default: []
+#        maxAge: 0                                         # Optional, default: 0
 ```
 
 ## Development Status: Stable
@@ -818,14 +861,6 @@ Simply run make all to validate your changes. Or run codes in example/ folder.
 - make all
 
 Run unit-test, golangci-lint, doctoc and gofmt.
-
-- make swag
-
-Generate swagger config for CommonService
-
-- make pkger
-
-If files in boot/assets have been modified, then we need to run it.
 
 ## Test instruction
 Run unit test with **make test** command.
