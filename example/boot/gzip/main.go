@@ -6,21 +6,25 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/boot"
-	"github.com/rookie-ninja/rk-entry/entry"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
 	"io"
 	"net/http"
 	"strings"
 )
 
-func main() {
-	// Bootstrap basic entries from boot config.
-	rkentry.RegisterInternalEntriesFromConfig("example/boot/gzip/boot.yaml")
+//go:embed boot.yaml
+var boot []byte
 
-	// Bootstrap echo entry from boot config
-	res := rkecho.RegisterEchoEntriesWithConfig("example/boot/gzip/boot.yaml")
+func main() {
+	// Bootstrap preload entries
+	rkentry.BootstrapPreloadEntryYAML(boot)
+
+	// Bootstrap gin entry from boot config
+	res := rkecho.RegisterEchoEntryYAML(boot)
 
 	// Register post method
 	res["greeter"].(*rkecho.EchoEntry).Echo.POST("/rk/v1/post", post)

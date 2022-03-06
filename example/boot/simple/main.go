@@ -6,22 +6,46 @@ package main
 
 import (
 	"context"
+	"embed"
+	_ "embed"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/rookie-ninja/rk-echo/boot"
-	"github.com/rookie-ninja/rk-entry/entry"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
 	"net/http"
 )
+
+// How to use embed.FS for:
+//
+// - boot.yaml
+// - rkentry.DocsEntryType
+// - rkentry.SWEntryType
+// - rkentry.StaticFileHandlerEntryType
+// - rkentry.CertEntry
+//
+// If we use embed.FS, then we only need one single binary file while packing.
+// We suggest use embed.FS to pack swagger local file since rk-entry would use os.Getwd() to look for files
+// if relative path was provided.
+//
+//go:embed docs
+var docsFS embed.FS
+
+func init() {
+	rkentry.GlobalAppCtx.AddEmbedFS(rkentry.SWEntryType, "greeter", &docsFS)
+}
+
+//go:embed boot.yaml
+var boot []byte
 
 // @title RK Swagger for Echo
 // @version 1.0
 // @description This is a greeter service with rk-boot.
 func main() {
-	// Bootstrap basic entries from boot config.
-	rkentry.RegisterInternalEntriesFromConfig("example/boot/simple/boot.yaml")
+	// Bootstrap preload entries
+	rkentry.BootstrapPreloadEntryYAML(boot)
 
 	// Bootstrap echo entry from boot config
-	res := rkecho.RegisterEchoEntriesWithConfig("example/boot/simple/boot.yaml")
+	res := rkecho.RegisterEchoEntryYAML(boot)
 
 	// Get EchoEntry
 	echoEntry := res["greeter"].(*rkecho.EchoEntry)
@@ -38,6 +62,7 @@ func main() {
 	echoEntry.Interrupt(context.Background())
 }
 
+// Greeter handler
 // @Summary Greeter service
 // @Id 1
 // @version 1.0
@@ -51,7 +76,6 @@ func Greeter(ctx echo.Context) error {
 	})
 }
 
-// Response.
 type GreeterResponse struct {
 	Message string
 }

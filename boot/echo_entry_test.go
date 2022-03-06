@@ -13,21 +13,12 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/prometheus/client_golang/prometheus"
-	rkechometa "github.com/rookie-ninja/rk-echo/interceptor/meta"
-	rkechometrics "github.com/rookie-ninja/rk-echo/interceptor/metrics/prom"
-	rkentry "github.com/rookie-ninja/rk-entry/entry"
-	rkmidmetrics "github.com/rookie-ninja/rk-entry/middleware/metrics"
+	"github.com/rookie-ninja/rk-echo/middleware/meta"
+	"github.com/rookie-ninja/rk-entry/v2/entry"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"math/big"
 	"net"
-	"net/http"
-	"net/http/httptest"
 	"os"
-	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -45,16 +36,16 @@ echo:
      path: "sw"
    commonService:
      enabled: true
-   tv:
+   docs:
      enabled: true
    prom:
      enabled: true
      pusher:
        enabled: false
-   interceptors:
-     loggingZap:
+   middleware:
+     logging:
        enabled: true
-     metricsProm:
+     prom:
        enabled: true
      auth:
        enabled: true
@@ -62,7 +53,7 @@ echo:
          - "user:pass"
      meta:
        enabled: true
-     tracingTelemetry:
+     trace:
        enabled: true
      ratelimit:
        enabled: true
@@ -86,12 +77,12 @@ echo:
      path: "sw"
    commonService:
      enabled: true
-   tv:
+   docs:
      enabled: true
-   interceptors:
-     loggingZap:
+   middleware:
+     logging:
        enabled: true
-     metricsProm:
+     prom:
        enabled: true
      auth:
        enabled: true
@@ -111,7 +102,7 @@ func TestGetEchoEntry(t *testing.T) {
 	echoEntry := RegisterEchoEntry(WithName("ut"))
 	assert.Equal(t, echoEntry, GetEchoEntry("ut"))
 
-	rkentry.GlobalAppCtx.RemoveEntry("ut")
+	rkentry.GlobalAppCtx.RemoveEntry(echoEntry)
 }
 
 func TestRegisterEchoEntry(t *testing.T) {
@@ -122,21 +113,45 @@ func TestRegisterEchoEntry(t *testing.T) {
 	assert.NotEmpty(t, entry.GetType())
 	assert.NotEmpty(t, entry.GetDescription())
 	assert.NotEmpty(t, entry.String())
-	rkentry.GlobalAppCtx.RemoveEntry(entry.GetName())
+	rkentry.GlobalAppCtx.RemoveEntry(entry)
+
+	// with options
+	commonServiceEntry := rkentry.RegisterCommonServiceEntry(&rkentry.BootCommonService{
+		Enabled: true,
+	})
+	staticEntry := rkentry.RegisterStaticFileHandlerEntry(&rkentry.BootStaticFileHandler{
+		Enabled: true,
+	})
+	certEntry := rkentry.RegisterCertEntry(&rkentry.BootCert{
+		Cert: []*rkentry.BootCertE{
+			{
+				Name: "ut-cert",
+			},
+		},
+	})
+	swEntry := rkentry.RegisterSWEntry(&rkentry.BootSW{
+		Enabled: true,
+	})
+	promEntry := rkentry.RegisterPromEntry(&rkentry.BootProm{
+		Enabled: true,
+	})
+	docsEntry := rkentry.RegisterDocsEntry(&rkentry.BootDocs{
+		Enabled: true,
+	})
 
 	// with options
 	entry = RegisterEchoEntry(
-		WithZapLoggerEntry(nil),
-		WithEventLoggerEntry(nil),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithTvEntry(rkentry.RegisterTvEntry()),
-		WithStaticFileHandlerEntry(rkentry.RegisterStaticFileHandlerEntry()),
-		WithCertEntry(rkentry.RegisterCertEntry()),
-		WithSwEntry(rkentry.RegisterSwEntry()),
+		WithLoggerEntry(rkentry.LoggerEntryNoop),
+		WithEventEntry(rkentry.EventEntryNoop),
+		WithCommonServiceEntry(commonServiceEntry),
+		WithStaticFileHandlerEntry(staticEntry),
+		WithCertEntry(certEntry[0]),
+		WithSwEntry(swEntry),
+		WithDocsEntry(docsEntry),
+		WithPromEntry(promEntry),
 		WithPort(8080),
 		WithName("ut-entry"),
-		WithDescription("ut-desc"),
-		WithPromEntry(rkentry.RegisterPromEntry()))
+		WithDescription("ut-desc"))
 
 	assert.NotEmpty(t, entry.GetName())
 	assert.NotEmpty(t, entry.GetType())
@@ -146,8 +161,8 @@ func TestRegisterEchoEntry(t *testing.T) {
 	assert.True(t, entry.IsStaticFileHandlerEnabled())
 	assert.True(t, entry.IsPromEnabled())
 	assert.True(t, entry.IsCommonServiceEnabled())
-	assert.True(t, entry.IsTvEnabled())
-	assert.True(t, entry.IsTlsEnabled())
+	assert.True(t, entry.IsDocsEnabled())
+	assert.False(t, entry.IsTlsEnabled())
 
 	bytes, err := entry.MarshalJSON()
 	assert.NotEmpty(t, bytes)
@@ -155,11 +170,11 @@ func TestRegisterEchoEntry(t *testing.T) {
 	assert.Nil(t, entry.UnmarshalJSON([]byte{}))
 }
 
-func TestEchoEntry_AddInterceptor(t *testing.T) {
+func TestEchoEntry_AddMiddleware(t *testing.T) {
 	defer assertNotPanic(t)
 	entry := RegisterEchoEntry()
-	inter := rkechometa.Interceptor()
-	entry.AddInterceptor(inter)
+	inter := rkechometa.Middleware()
+	entry.AddMiddleware(inter)
 }
 
 func TestEchoEntry_Bootstrap(t *testing.T) {
@@ -173,18 +188,30 @@ func TestEchoEntry_Bootstrap(t *testing.T) {
 
 	entry.Interrupt(context.TODO())
 
-	// with enable sw, static, prom, common, tv, tls
-	certEntry := rkentry.RegisterCertEntry()
-	certEntry.Store.ServerCert, certEntry.Store.ServerKey = generateCerts()
+	// with options
+	commonServiceEntry := rkentry.RegisterCommonServiceEntry(&rkentry.BootCommonService{
+		Enabled: true,
+	})
+	staticEntry := rkentry.RegisterStaticFileHandlerEntry(&rkentry.BootStaticFileHandler{
+		Enabled: true,
+	})
+	swEntry := rkentry.RegisterSWEntry(&rkentry.BootSW{
+		Enabled: true,
+	})
+	promEntry := rkentry.RegisterPromEntry(&rkentry.BootProm{
+		Enabled: true,
+	})
+	docsEntry := rkentry.RegisterDocsEntry(&rkentry.BootDocs{
+		Enabled: true,
+	})
 
 	entry = RegisterEchoEntry(
 		WithPort(8080),
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithTvEntry(rkentry.RegisterTvEntry()),
-		WithStaticFileHandlerEntry(rkentry.RegisterStaticFileHandlerEntry()),
-		WithCertEntry(certEntry),
-		WithSwEntry(rkentry.RegisterSwEntry()),
-		WithPromEntry(rkentry.RegisterPromEntry()))
+		WithCommonServiceEntry(commonServiceEntry),
+		WithDocsEntry(docsEntry),
+		WithStaticFileHandlerEntry(staticEntry),
+		WithSwEntry(swEntry),
+		WithPromEntry(promEntry))
 	entry.Bootstrap(context.TODO())
 	validateServerIsUp(t, 8080, entry.IsTlsEnabled())
 	assert.NotEmpty(t, entry.Echo.Routes())
@@ -192,32 +219,26 @@ func TestEchoEntry_Bootstrap(t *testing.T) {
 	entry.Interrupt(context.TODO())
 }
 
-func TestEchoEntry_startServer_InvalidTls(t *testing.T) {
-	defer assertPanic(t)
-
-	// with invalid tls
-	entry := RegisterEchoEntry(
-		WithPort(8080),
-		WithCertEntry(rkentry.RegisterCertEntry()))
-	event := rkentry.NoopEventLoggerEntry().GetEventFactory().CreateEventNoop()
-	logger := rkentry.NoopZapLoggerEntry().GetLogger()
-
-	entry.startServer(event, logger)
-}
-
 func TestEchoEntry_startServer_TlsServerFail(t *testing.T) {
 	defer assertPanic(t)
 
-	certEntry := rkentry.RegisterCertEntry()
-	certEntry.Store.ServerCert, certEntry.Store.ServerKey = generateCerts()
+	certEntry := rkentry.RegisterCertEntry(&rkentry.BootCert{
+		Cert: []*rkentry.BootCertE{
+			{
+				Name: "ut-cert",
+			},
+		},
+	})[0]
+	certificate, _ := tls.X509KeyPair(generateCerts())
+	certEntry.Certificate = &certificate
 
 	// let's give an invalid port
 	entry := RegisterEchoEntry(
 		WithPort(808080),
 		WithCertEntry(certEntry))
 
-	event := rkentry.NoopEventLoggerEntry().GetEventFactory().CreateEventNoop()
-	logger := rkentry.NoopZapLoggerEntry().GetLogger()
+	event := rkentry.EventEntryNoop.EventFactory.CreateEventNoop()
+	logger := rkentry.LoggerEntryNoop.Logger
 
 	entry.startServer(event, logger)
 }
@@ -229,19 +250,16 @@ func TestEchoEntry_startServer_ServerFail(t *testing.T) {
 	entry := RegisterEchoEntry(
 		WithPort(808080))
 
-	event := rkentry.NoopEventLoggerEntry().GetEventFactory().CreateEventNoop()
-	logger := rkentry.NoopZapLoggerEntry().GetLogger()
+	event := rkentry.EventEntryNoop.CreateEventNoop()
+	logger := rkentry.LoggerEntryNoop.Logger
 
 	entry.startServer(event, logger)
 }
 
-func TestRegisterEchoEntriesWithConfig(t *testing.T) {
+func TestRegisterEchoEntryYAML(t *testing.T) {
 	assertNotPanic(t)
 
-	// write config file in unit test temp directory
-	tempDir := path.Join(t.TempDir(), "boot.yaml")
-	assert.Nil(t, ioutil.WriteFile(tempDir, []byte(defaultBootConfigStr), os.ModePerm))
-	entries := RegisterEchoEntriesWithConfig(tempDir)
+	entries := RegisterEchoEntryYAML([]byte(defaultBootConfigStr))
 	assert.NotNil(t, entries)
 	assert.Len(t, entries, 2)
 
@@ -254,140 +272,6 @@ func TestRegisterEchoEntriesWithConfig(t *testing.T) {
 
 	greeter3 := entries["greeter3"]
 	assert.Nil(t, greeter3)
-}
-
-func TestEchoEntry_constructSwUrl(t *testing.T) {
-	// happy case
-	writer := httptest.NewRecorder()
-	ctx := echo.New().NewContext(&http.Request{
-		Host: "8.8.8.8:1111",
-	}, writer)
-
-	path := "ut-sw"
-	port := 1111
-
-	sw := rkentry.RegisterSwEntry(rkentry.WithPathSw(path), rkentry.WithPortSw(uint64(port)))
-	entry := RegisterEchoEntry(WithSwEntry(sw), WithPort(uint64(port)))
-
-	assert.Equal(t, fmt.Sprintf("http://8.8.8.8:%s/%s/", strconv.Itoa(port), path), entry.constructSwUrl(ctx))
-
-	// with tls
-	ctx.Request().TLS = &tls.ConnectionState{}
-	assert.Equal(t, fmt.Sprintf("https://8.8.8.8:%s/%s/", strconv.Itoa(port), path), entry.constructSwUrl(ctx))
-
-	// without swagger
-	entry = RegisterEchoEntry(WithPort(uint64(port)))
-	assert.Equal(t, "N/A", entry.constructSwUrl(ctx))
-}
-
-func TestEchoEntry_API(t *testing.T) {
-	defer assertNotPanic(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/ut-test", nil)
-	writer := httptest.NewRecorder()
-	ctx := echo.New().NewContext(req, writer)
-
-	entry := RegisterEchoEntry(
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithName("unit-test"))
-
-	entry.Echo.GET("/ut-test", func(c echo.Context) error {
-		return nil
-	})
-
-	entry.Apis(ctx)
-	assert.Equal(t, 200, writer.Code)
-	assert.NotEmpty(t, writer.Body.String())
-
-	entry.Interrupt(context.TODO())
-}
-
-func TestEchoEntry_Req_HappyCase(t *testing.T) {
-	defer assertNotPanic(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/ut-test", nil)
-	writer := httptest.NewRecorder()
-	ctx := echo.New().NewContext(req, writer)
-
-	entry := RegisterEchoEntry(
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithPort(8080),
-		WithName("ut"))
-
-	entry.AddInterceptor(rkechometrics.Interceptor(
-		rkmidmetrics.WithEntryNameAndType("ut", "Echo"),
-		rkmidmetrics.WithRegisterer(prometheus.NewRegistry())))
-
-	entry.Bootstrap(context.TODO())
-
-	entry.Req(ctx)
-	assert.Equal(t, 200, writer.Code)
-	assert.NotEmpty(t, writer.Body.String())
-
-	entry.Interrupt(context.TODO())
-}
-
-func TestEchoEntry_Req_WithEmpty(t *testing.T) {
-	defer assertNotPanic(t)
-
-	req := httptest.NewRequest(http.MethodGet, "/req", nil)
-	writer := httptest.NewRecorder()
-	ctx := echo.New().NewContext(req, writer)
-
-	entry := RegisterEchoEntry(
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithPort(8080),
-		WithName("ut"))
-
-	entry.AddInterceptor(rkechometrics.Interceptor(
-		rkmidmetrics.WithRegisterer(prometheus.NewRegistry())))
-
-	entry.Bootstrap(context.TODO())
-
-	entry.Req(ctx)
-	assert.Equal(t, 200, writer.Code)
-	assert.NotEmpty(t, writer.Body.String())
-
-	entry.Interrupt(context.TODO())
-}
-
-func TestEchoEntry_TV(t *testing.T) {
-	defer assertNotPanic(t)
-
-	entry := RegisterEchoEntry(
-		WithCommonServiceEntry(rkentry.RegisterCommonServiceEntry()),
-		WithTvEntry(rkentry.RegisterTvEntry()),
-		WithPort(8080),
-		WithName("ut"))
-
-	entry.AddInterceptor(rkechometrics.Interceptor(
-		rkmidmetrics.WithEntryNameAndType("ut", "Echo")))
-
-	entry.Bootstrap(context.TODO())
-
-	// for /api
-	req := httptest.NewRequest(http.MethodGet, "/apis", nil)
-	writer := httptest.NewRecorder()
-	ctx := echo.New().NewContext(req, writer)
-	ctx.SetParamNames("*")
-	ctx.SetParamValues("/apis")
-
-	entry.TV(ctx)
-	assert.Equal(t, 200, writer.Code)
-	assert.NotEmpty(t, writer.Body.String())
-
-	// for default
-	req = httptest.NewRequest(http.MethodGet, "/other", nil)
-	writer = httptest.NewRecorder()
-	ctx = echo.New().NewContext(req, writer)
-	ctx.SetParamNames("*")
-	ctx.SetParamValues("/other")
-
-	entry.TV(ctx)
-	assert.Equal(t, 200, writer.Code)
-	assert.NotEmpty(t, writer.Body.String())
-
-	entry.Interrupt(context.TODO())
 }
 
 func generateCerts() ([]byte, []byte) {
