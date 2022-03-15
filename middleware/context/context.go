@@ -10,6 +10,7 @@ import (
 	"context"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
+	rkcursor "github.com/rookie-ninja/rk-entry/v2/cursor"
 	"github.com/rookie-ninja/rk-entry/v2/middleware"
 	"github.com/rookie-ninja/rk-logger"
 	"github.com/rookie-ninja/rk-query"
@@ -49,6 +50,14 @@ func SetHeaderToClient(ctx echo.Context, key, value string) {
 	}
 	header := ctx.Response().Writer.Header()
 	header.Set(key, value)
+}
+
+// GetCursor create rkcursor.Cursor instance
+func GetCursor(ctx echo.Context) *rkcursor.Cursor {
+	return rkcursor.NewCursor(
+		rkcursor.WithLogger(GetLogger(ctx)),
+		rkcursor.WithEvent(GetEvent(ctx)),
+		rkcursor.WithEntryNameAndType(GetEntryName(ctx), "EchoEntry"))
 }
 
 // GetEvent extract takes the call-scoped EventData from middleware.
