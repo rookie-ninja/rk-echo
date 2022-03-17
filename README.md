@@ -561,29 +561,32 @@ In order to make swagger UI and RK tv work under JWT without JWT token, we need 
 jwt:
   ...
   ignore:
-    - "/sw"
+   - "/sw"
 ```
 
-| name                            | description                                                 | type     | default value          |
-|---------------------------------|-------------------------------------------------------------|----------|------------------------|
-| echo.middleware.jwt.enabled     | Enable JWT middleware                                       | boolean  | false                  |
-| echo.middleware.jwt.ignore      | Provide ignoring path prefix.                               | []string | []                     |
-| echo.middleware.jwt.signingKey  | Required, Provide signing key.                              | string   | ""                     |
-| echo.middleware.jwt.signingKeys | Provide signing keys as scheme of <key>:<value>.            | []string | []                     |
-| echo.middleware.jwt.signingAlgo | Provide signing algorithm.                                  | string   | HS256                  |
-| echo.middleware.jwt.tokenLookup | Provide token lookup scheme, please see bellow description. | string   | "header:Authorization" |
-| echo.middleware.jwt.authScheme  | Provide auth scheme.                                        | string   | Bearer                 |
+| name                                          | description                                                                      | type     | default value          |
+|-----------------------------------------------|----------------------------------------------------------------------------------|----------|------------------------|
+| echo.middleware.jwt.enabled                   | Optional, Enable JWT middleware                                                  | boolean  | false                  |
+| echo.middleware.jwt.ignore                    | Optional, Provide ignoring path prefix.                                          | []string | []                     |
+| echo.middleware.jwt.signerEntry               | Optional, Provide signerEntry name.                                              | string   | ""                     |
+| echo.middleware.jwt.symmetric.algorithm       | Required if symmetric specified. One of HS256, HS384, HS512                      | string   | ""                     |
+| echo.middleware.jwt.symmetric.token           | Optional, raw token for signing and verification                                 | string   | ""                     |
+| echo.middleware.jwt.symmetric.tokenPath       | Optional, path of token file                                                     | string   | ""                     |
+| echo.middleware.jwt.asymmetric.algorithm      | Required if symmetric specified. One of RS256, RS384, RS512, ES256, ES384, ES512 | string   | ""                     |
+| echo.middleware.jwt.asymmetric.privateKey     | Optional, raw private key file for signing                                       | string   | ""                     |
+| echo.middleware.jwt.asymmetric.privateKeyPath | Optional, private key file path for signing                                      | string   | ""                     |
+| echo.middleware.jwt.asymmetric.publicKey      | Optional, raw public key file for verification                                   | string   | ""                     |
+| echo.middleware.jwt.asymmetric.publicKeyPath  | Optional, public key file path for verification                                  | string   | ""                     |
+| echo.middleware.jwt.tokenLookup               | Provide token lookup scheme, please see bellow description.                      | string   | "header:Authorization" |
+| echo.middleware.jwt.authScheme                | Provide auth scheme.                                                             | string   | Bearer                 |
 
-The supported scheme of **tokenLookup** 
+The supported scheme of **tokenLookup**
 
 ```
 // Optional. Default value "header:Authorization".
 // Possible values:
 // - "header:<name>"
 // - "query:<name>"
-// - "param:<name>"
-// - "cookie:<name>"
-// - "form:<name>"
 // Multiply sources example:
 // - "header: Authorization,cookie: myowncookie"
 ```
@@ -811,11 +814,18 @@ echo:
 #            timeoutMs: 1000                               # Optional, default: 5000
 #      jwt:
 #        enabled: true                                     # Optional, default: false
-#        signingKey: "my-secret"                           # Required
-#        ignore: [""]                                      # Optional, default: []
-#        signingKeys:                                      # Optional
-#          - "key:value"
-#        signingAlgo: ""                                   # Optional, default: "HS256"
+#        ignore: [ "" ]                                    # Optional, default: []
+#        signerEntry: ""                                   # Optional, default: ""
+#        symmetric:                                        # Optional
+#          algorithm: ""                                   # Required, default: ""
+#          token: ""                                       # Optional, default: ""
+#          tokenPath: ""                                   # Optional, default: ""
+#        asymmetric:                                       # Optional
+#          algorithm: ""                                   # Required, default: ""
+#          privateKey: ""                                  # Optional, default: ""
+#          privateKeyPath: ""                              # Optional, default: ""
+#          publicKey: ""                                   # Optional, default: ""
+#          publicKeyPath: ""                               # Optional, default: ""
 #        tokenLookup: "header:<name>"                      # Optional, default: "header:Authorization"
 #        authScheme: "Bearer"                              # Optional, default: "Bearer"
 #      secure:
