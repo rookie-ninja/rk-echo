@@ -35,7 +35,8 @@ All instances could be configured via YAML or Code.
 | Swagger           | Builtin swagger UI handler.                                                                                   |
 | Docs              | Builtin [RapiDoc](https://github.com/mrin9/RapiDoc) instance which can be used to replace swagger and RK TV.  |
 | CommonService     | List of common APIs.                                                                                          |
-| StaticFileHandler | A Web UI shows files could be downloaded from server, currently support source of local and pkger.            |
+| StaticFileHandler | A Web UI shows files could be downloaded from server, currently support source of local and embed.FS.         |
+| PProf             | PProf web UI.                                                                                                 |
 
 ## Supported middlewares
 All middlewares could be configured via YAML or Code.
@@ -560,29 +561,32 @@ In order to make swagger UI and RK tv work under JWT without JWT token, we need 
 jwt:
   ...
   ignore:
-    - "/sw"
+   - "/sw"
 ```
 
-| name                            | description                                                 | type     | default value          |
-|---------------------------------|-------------------------------------------------------------|----------|------------------------|
-| echo.middleware.jwt.enabled     | Enable JWT middleware                                       | boolean  | false                  |
-| echo.middleware.jwt.ignore      | Provide ignoring path prefix.                               | []string | []                     |
-| echo.middleware.jwt.signingKey  | Required, Provide signing key.                              | string   | ""                     |
-| echo.middleware.jwt.signingKeys | Provide signing keys as scheme of <key>:<value>.            | []string | []                     |
-| echo.middleware.jwt.signingAlgo | Provide signing algorithm.                                  | string   | HS256                  |
-| echo.middleware.jwt.tokenLookup | Provide token lookup scheme, please see bellow description. | string   | "header:Authorization" |
-| echo.middleware.jwt.authScheme  | Provide auth scheme.                                        | string   | Bearer                 |
+| name                                          | description                                                                      | type     | default value          |
+|-----------------------------------------------|----------------------------------------------------------------------------------|----------|------------------------|
+| echo.middleware.jwt.enabled                   | Optional, Enable JWT middleware                                                  | boolean  | false                  |
+| echo.middleware.jwt.ignore                    | Optional, Provide ignoring path prefix.                                          | []string | []                     |
+| echo.middleware.jwt.signerEntry               | Optional, Provide signerEntry name.                                              | string   | ""                     |
+| echo.middleware.jwt.symmetric.algorithm       | Required if symmetric specified. One of HS256, HS384, HS512                      | string   | ""                     |
+| echo.middleware.jwt.symmetric.token           | Optional, raw token for signing and verification                                 | string   | ""                     |
+| echo.middleware.jwt.symmetric.tokenPath       | Optional, path of token file                                                     | string   | ""                     |
+| echo.middleware.jwt.asymmetric.algorithm      | Required if symmetric specified. One of RS256, RS384, RS512, ES256, ES384, ES512 | string   | ""                     |
+| echo.middleware.jwt.asymmetric.privateKey     | Optional, raw private key file for signing                                       | string   | ""                     |
+| echo.middleware.jwt.asymmetric.privateKeyPath | Optional, private key file path for signing                                      | string   | ""                     |
+| echo.middleware.jwt.asymmetric.publicKey      | Optional, raw public key file for verification                                   | string   | ""                     |
+| echo.middleware.jwt.asymmetric.publicKeyPath  | Optional, public key file path for verification                                  | string   | ""                     |
+| echo.middleware.jwt.tokenLookup               | Provide token lookup scheme, please see bellow description.                      | string   | "header:Authorization" |
+| echo.middleware.jwt.authScheme                | Provide auth scheme.                                                             | string   | Bearer                 |
 
-The supported scheme of **tokenLookup** 
+The supported scheme of **tokenLookup**
 
 ```
 // Optional. Default value "header:Authorization".
 // Possible values:
 // - "header:<name>"
 // - "query:<name>"
-// - "param:<name>"
-// - "cookie:<name>"
-// - "form:<name>"
 // Multiply sources example:
 // - "header: Authorization,cookie: myowncookie"
 ```
@@ -630,7 +634,7 @@ The supported scheme of **tokenLookup**
 #logger:
 #  - name: my-logger                                       # Required
 #    description: "Description of entry"                   # Optional
-#    locale: "*::*::*::*"                                  # Optional, default: "*::*::*::*"
+#    domain: "*"                                           # Optional, default: "*"
 #    zap:                                                  # Optional
 #      level: info                                         # Optional, default: info
 #      development: true                                   # Optional, default: true
@@ -675,7 +679,7 @@ The supported scheme of **tokenLookup**
 #event:
 #  - name: my-event                                        # Required
 #    description: "Description of entry"                   # Optional
-#    locale: "*::*::*::*"                                  # Optional, default: "*::*::*::*"
+#    domain: "*"                                           # Optional, default: "*"
 #    encoding: console                                     # Optional, default: console
 #    outputPaths: ["stdout"]                               # Optional, default: [stdout]
 #    lumberjack:                                           # Optional, default: nil
@@ -699,15 +703,15 @@ The supported scheme of **tokenLookup**
 #cert:
 #  - name: my-cert                                         # Required
 #    description: "Description of entry"                   # Optional, default: ""
-#    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
+#    domain: "*"                                           # Optional, default: "*"
 #    caPath: "certs/ca.pem"                                # Optional, default: ""
 #    certPemPath: "certs/server-cert.pem"                  # Optional, default: ""
 #    keyPemPath: "certs/server-key.pem"                    # Optional, default: ""
 #config:
 #  - name: my-config                                       # Required
 #    description: "Description of entry"                   # Optional, default: ""
-#    locale: "*::*::*::*"                                  # Optional, default: *::*::*::*
-##    path: "config/config.yaml"                            # Optional
+#    domain: "*"                                           # Optional, default: "*"
+#    path: "config/config.yaml"                            # Optional
 #    envPrefix: ""                                         # Optional, default: ""
 #    content:                                              # Optional, defualt: empty map
 #      key: value
@@ -740,6 +744,9 @@ echo:
 #      path: "/static"                                     # Optional, default: /static
 #      sourceType: local                                   # Optional, options: local, embed.FS can be used either, need to specify in code
 #      sourcePath: "."                                     # Optional, full path of source directory
+#    pprof:
+#      enabled: true                                       # Optional, default: false
+#      path: "/pprof"                                      # Optional, default: /pprof
 #    prom:
 #      enabled: true                                       # Optional, default: false
 #      path: ""                                            # Optional, default: "/metrics"
@@ -807,11 +814,18 @@ echo:
 #            timeoutMs: 1000                               # Optional, default: 5000
 #      jwt:
 #        enabled: true                                     # Optional, default: false
-#        signingKey: "my-secret"                           # Required
-#        ignore: [""]                                      # Optional, default: []
-#        signingKeys:                                      # Optional
-#          - "key:value"
-#        signingAlgo: ""                                   # Optional, default: "HS256"
+#        ignore: [ "" ]                                    # Optional, default: []
+#        signerEntry: ""                                   # Optional, default: ""
+#        symmetric:                                        # Optional
+#          algorithm: ""                                   # Required, default: ""
+#          token: ""                                       # Optional, default: ""
+#          tokenPath: ""                                   # Optional, default: ""
+#        asymmetric:                                       # Optional
+#          algorithm: ""                                   # Required, default: ""
+#          privateKey: ""                                  # Optional, default: ""
+#          privateKeyPath: ""                              # Optional, default: ""
+#          publicKey: ""                                   # Optional, default: ""
+#          publicKeyPath: ""                               # Optional, default: ""
 #        tokenLookup: "header:<name>"                      # Optional, default: "header:Authorization"
 #        authScheme: "Bearer"                              # Optional, default: "Bearer"
 #      secure:
