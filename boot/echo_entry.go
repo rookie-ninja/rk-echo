@@ -44,6 +44,7 @@ import (
 	"github.com/rookie-ninja/rk-query"
 	"go.uber.org/zap"
 	"net/http"
+	"net/http/pprof"
 	"path"
 	"strconv"
 	"strings"
@@ -76,6 +77,7 @@ type BootEcho struct {
 		LoggerEntry   string                        `yaml:"loggerEntry" json:"loggerEntry"`
 		EventEntry    string                        `yaml:"eventEntry" json:"eventEntry"`
 		Static        rkentry.BootStaticFileHandler `yaml:"static" json:"static"`
+		PProf         rkentry.BootPProf             `yaml:"pprof" json:"pprof"`
 		Middleware    struct {
 			Ignore    []string                `yaml:"ignore" json:"ignore"`
 			Logging   rkmidlog.BootConfig     `yaml:"logging" json:"logging"`
@@ -113,6 +115,7 @@ type EchoEntry struct {
 	PromEntry          *rkentry.PromEntry              `json:"-" yaml:"-"`
 	StaticFileEntry    *rkentry.StaticFileHandlerEntry `json:"-" yaml:"-"`
 	CertEntry          *rkentry.CertEntry              `json:"-" yaml:"-"`
+	PProfEntry         *rkentry.PProfEntry             `json:"-" yaml:"-"`
 	bootstrapLogOnce   sync.Once                       `json:"-" yaml:"-"`
 }
 
@@ -180,6 +183,9 @@ func RegisterEchoEntryYAML(raw []byte) map[string]rkentry.Entry {
 
 		// Register static file handler
 		staticEntry := rkentry.RegisterStaticFileHandlerEntry(&element.Static, rkentry.WithNameStaticFileHandlerEntry(element.Name))
+
+		// Register pprof entry
+		pprofEntry := rkentry.RegisterPProfEntry(&element.PProf, rkentry.WithNamePProfEntry(element.Name))
 
 		inters := make([]echo.MiddlewareFunc, 0)
 
@@ -279,6 +285,7 @@ func RegisterEchoEntryYAML(raw []byte) map[string]rkentry.Entry {
 			WithPromEntry(promEntry),
 			WithCommonServiceEntry(commonServiceEntry),
 			WithCertEntry(certEntry),
+			WithPProfEntry(pprofEntry),
 			WithStaticFileHandlerEntry(staticEntry))
 
 		entry.AddMiddleware(inters...)
@@ -398,6 +405,21 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 		entry.PromEntry.Bootstrap(ctx)
 	}
 
+	// Is pprof enabled?
+	if entry.IsPProfEnabled() {
+		entry.Echo.GET(entry.PProfEntry.Path, echo.WrapHandler(http.HandlerFunc(pprof.Index)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "cmdline"), echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "profile"), echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "symbol"), echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "trace"), echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "allocs"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("allocs").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "block"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("block").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "goroutine"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("goroutine").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "heap"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("heap").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "mutex"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("mutex").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "threadcreate"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("threadcreate").ServeHTTP)))
+	}
+
 	// Start echo server
 	go entry.startServer(event, logger)
 
@@ -429,6 +451,9 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 
 			entry.LoggerEntry.Info(fmt.Sprintf("CommonSreviceEntry: %s", strings.Join(handlers, ", ")))
 		}
+		if entry.IsPProfEnabled() {
+			entry.LoggerEntry.Info(fmt.Sprintf("PProfEntry: %s://localhost:%d%s", scheme, entry.Port, entry.PProfEntry.Path))
+		}
 		entry.EventEntry.Finish(event)
 	})
 }
@@ -459,6 +484,10 @@ func (entry *EchoEntry) Interrupt(ctx context.Context) {
 
 	if entry.IsDocsEnabled() {
 		entry.DocsEntry.Interrupt(ctx)
+	}
+
+	if entry.IsPProfEnabled() {
+		entry.PProfEntry.Interrupt(ctx)
 	}
 
 	if entry.Echo != nil {
@@ -493,6 +522,7 @@ func (entry *EchoEntry) MarshalJSON() ([]byte, error) {
 		"commonServiceEntry":     entry.CommonServiceEntry,
 		"promEntry":              entry.PromEntry,
 		"staticFileHandlerEntry": entry.StaticFileEntry,
+		"pprofEntry":             entry.PProfEntry,
 	}
 
 	if entry.IsTlsEnabled() {
@@ -549,6 +579,11 @@ func (entry *EchoEntry) IsDocsEnabled() bool {
 // IsPromEnabled Is prometheus entry enabled?
 func (entry *EchoEntry) IsPromEnabled() bool {
 	return entry.PromEntry != nil
+}
+
+// IsPProfEnabled Is pprof entry enabled?
+func (entry *EchoEntry) IsPProfEnabled() bool {
+	return entry.PProfEntry != nil
 }
 
 // IsStaticFileHandlerEnabled Is static file handler entry enabled?
@@ -615,6 +650,13 @@ func (entry *EchoEntry) logBasicInfo(operation string, ctx context.Context) (rkq
 		event.AddPayloads(
 			zap.Bool("staticFileHandlerEnabled", true),
 			zap.String("staticFileHandlerPath", entry.StaticFileEntry.Path))
+	}
+
+	// add pprofEntry info
+	if entry.IsPProfEnabled() {
+		event.AddPayloads(
+			zap.Bool("pprofEnabled", true),
+			zap.String("pprofPath", entry.PProfEntry.Path))
 	}
 
 	// add tls info
@@ -721,6 +763,13 @@ func WithSwEntry(sw *rkentry.SWEntry) EchoEntryOption {
 func WithCommonServiceEntry(commonServiceEntry *rkentry.CommonServiceEntry) EchoEntryOption {
 	return func(entry *EchoEntry) {
 		entry.CommonServiceEntry = commonServiceEntry
+	}
+}
+
+// WithPProfEntry provide rkentry.PProfEntry.
+func WithPProfEntry(p *rkentry.PProfEntry) EchoEntryOption {
+	return func(entry *EchoEntry) {
+		entry.PProfEntry = p
 	}
 }
 
