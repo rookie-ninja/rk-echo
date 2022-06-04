@@ -4,7 +4,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rookie-ninja/rk-echo)](https://goreportcard.com/report/github.com/rookie-ninja/rk-echo)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Middleware & bootstrapper designed for [labstack/echo](https://github.com/labstack/echo) web framework. [Documentation](https://rkdev.info/docs/bootstrapper/user-guide/echo-golang/).
+Middleware & bootstrapper designed for [labstack/echo](https://github.com/labstack/echo) web framework. [Documentation](https://docs.rkdev.info/docs/rk-boot/getting-started/echo/).
 
 This belongs to [rk-boot](https://github.com/rookie-ninja/rk-boot) family. 
 
