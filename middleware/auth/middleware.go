@@ -32,7 +32,7 @@ func Middleware(opts ...rkmidauth.Option) echo.MiddlewareFunc {
 				for k, v := range beforeCtx.Output.HeadersToReturn {
 					ctx.Response().Header().Set(k, v)
 				}
-				return ctx.JSON(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
+				return ctx.JSON(beforeCtx.Output.ErrResp.Code(), beforeCtx.Output.ErrResp)
 			}
 
 			return next(ctx)

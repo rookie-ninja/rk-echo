@@ -9,10 +9,10 @@ package rkechogzip
 import (
 	"bytes"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-entry/v2/error"
 	"github.com/rookie-ninja/rk-entry/v2/middleware"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"strings"
 )
 
@@ -47,13 +47,13 @@ func Middleware(opts ...Option) echo.MiddlewareFunc {
 						return next(ctx)
 					}
 
-					return rkerror.NewInternalError("", err).Err
+					return rkmid.GetErrorBuilder().New(http.StatusInternalServerError, "Failed to read request body", err)
 				}
 
 				// create a buffer and copy decompressed data into it via gzipReader
 				var buf bytes.Buffer
 				if _, err := io.Copy(&buf, gzipReader); err != nil {
-					return rkerror.NewInternalError("", err).Err
+					return rkmid.GetErrorBuilder().New(http.StatusInternalServerError, "Failed to copy request body", err)
 				}
 
 				// close both gzipReader and original reader in request body

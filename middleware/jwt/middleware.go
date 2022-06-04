@@ -28,7 +28,7 @@ func Middleware(opts ...rkmidjwt.Option) echo.MiddlewareFunc {
 
 			// case 1: error response
 			if beforeCtx.Output.ErrResp != nil {
-				return ctx.JSON(beforeCtx.Output.ErrResp.Err.Code,
+				return ctx.JSON(beforeCtx.Output.ErrResp.Code(),
 					beforeCtx.Output.ErrResp)
 			}
 
