@@ -8,7 +8,6 @@ package rkechocsrf
 import (
 	"bytes"
 	"github.com/labstack/echo/v4"
-	"github.com/rookie-ninja/rk-entry/v2/error"
 	"github.com/rookie-ninja/rk-entry/v2/middleware"
 	"github.com/rookie-ninja/rk-entry/v2/middleware/csrf"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +32,7 @@ func TestMiddleware(t *testing.T) {
 	ctx, w := newCtx()
 
 	// assign any of error response
-	beforeCtx.Output.ErrResp = rkerror.NewForbidden("")
+	beforeCtx.Output.ErrResp = rkmid.GetErrorBuilder().New(http.StatusForbidden, "")
 	inter(userHandler)(ctx)
 	assert.Equal(t, http.StatusForbidden, w.Code)
 

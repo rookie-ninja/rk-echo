@@ -23,7 +23,7 @@ func Interceptor(opts ...rkmidpanic.Option) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			ctx.Set(rkmid.EntryNameKey.String(), set.GetEntryName())
 
-			handlerFunc := func(resp *rkerror.ErrorResp) {
+			handlerFunc := func(resp rkerror.ErrorInterface) {
 				ctx.JSON(http.StatusInternalServerError, resp)
 			}
 			beforeCtx := set.BeforeCtx(rkechoctx.GetEvent(ctx), rkechoctx.GetLogger(ctx), handlerFunc)

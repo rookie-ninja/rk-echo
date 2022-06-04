@@ -28,7 +28,7 @@ func Middleware(opts ...rkmidcsrf.Option) echo.MiddlewareFunc {
 			set.Before(beforeCtx)
 
 			if beforeCtx.Output.ErrResp != nil {
-				return ctx.JSON(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
+				return ctx.JSON(beforeCtx.Output.ErrResp.Code(), beforeCtx.Output.ErrResp)
 			}
 
 			for _, v := range beforeCtx.Output.VaryHeaders {

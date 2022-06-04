@@ -635,6 +635,7 @@ The supported scheme of **tokenLookup**
 #  - name: my-logger                                       # Required
 #    description: "Description of entry"                   # Optional
 #    domain: "*"                                           # Optional, default: "*"
+#    default: false                                        # Optional, default: false, use as default logger entry
 #    zap:                                                  # Optional
 #      level: info                                         # Optional, default: info
 #      development: true                                   # Optional, default: true
@@ -680,6 +681,7 @@ The supported scheme of **tokenLookup**
 #  - name: my-event                                        # Required
 #    description: "Description of entry"                   # Optional
 #    domain: "*"                                           # Optional, default: "*"
+#    default: false                                        # Optional, default: false, use as default event entry
 #    encoding: console                                     # Optional, default: console
 #    outputPaths: ["stdout"]                               # Optional, default: [stdout]
 #    lumberjack:                                           # Optional, default: nil
@@ -759,6 +761,7 @@ echo:
 #        certEntry: my-cert                                # Optional, default: "", reference of cert entry declared above
 #    middleware:
 #      ignore: [""]                                        # Optional, default: []
+#      errorModel: google                                  # Optional, default: google, [amazon, google] are supported options
 #      logging:
 #        enabled: true                                     # Optional, default: false
 #        ignore: [""]                                      # Optional, default: []
@@ -815,6 +818,7 @@ echo:
 #      jwt:
 #        enabled: true                                     # Optional, default: false
 #        ignore: [ "" ]                                    # Optional, default: []
+#        skipVerify: false                                 # Optional, default: false
 #        signerEntry: ""                                   # Optional, default: ""
 #        symmetric:                                        # Optional
 #          algorithm: ""                                   # Required, default: ""

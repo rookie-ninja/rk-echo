@@ -24,7 +24,7 @@ func Middleware(opts ...rkmidlimit.Option) echo.MiddlewareFunc {
 			set.Before(beforeCtx)
 
 			if beforeCtx.Output.ErrResp != nil {
-				return ctx.JSON(beforeCtx.Output.ErrResp.Err.Code, beforeCtx.Output.ErrResp)
+				return ctx.JSON(beforeCtx.Output.ErrResp.Code(), beforeCtx.Output.ErrResp)
 			}
 
 			return next(ctx)

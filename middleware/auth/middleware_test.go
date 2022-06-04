@@ -8,7 +8,7 @@ package rkechoauth
 import (
 	"bytes"
 	"github.com/labstack/echo/v4"
-	rkerror "github.com/rookie-ninja/rk-entry/v2/error"
+	rkmid "github.com/rookie-ninja/rk-entry/v2/middleware"
 	"github.com/rookie-ninja/rk-entry/v2/middleware/auth"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -36,7 +36,7 @@ func TestMiddleware(t *testing.T) {
 	inter := Middleware(rkmidauth.WithMockOptionSet(mock))
 	ctx, w := newCtx()
 	// assign any of error response
-	beforeCtx.Output.ErrResp = rkerror.NewUnauthorized("")
+	beforeCtx.Output.ErrResp = rkmid.GetErrorBuilder().New(http.StatusUnauthorized, "")
 	beforeCtx.Output.HeadersToReturn["key"] = "value"
 	inter(userFunc)(ctx)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
