@@ -50,6 +50,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -226,6 +227,12 @@ func RegisterEchoEntryYAML(raw []byte) map[string]rkentry.Entry {
 				rkmidtrace.ToOptions(&element.Middleware.Trace, element.Name, EchoEntryType)...))
 		}
 
+		// cors middleware
+		if element.Middleware.Cors.Enabled {
+			inters = append(inters, rkechocors.Middleware(
+				rkmidcors.ToOptions(&element.Middleware.Cors, element.Name, EchoEntryType)...))
+		}
+
 		// jwt middleware
 		if element.Middleware.Jwt.Enabled {
 			inters = append(inters, rkechojwt.Middleware(
@@ -242,12 +249,6 @@ func RegisterEchoEntryYAML(raw []byte) map[string]rkentry.Entry {
 		if element.Middleware.Csrf.Enabled {
 			inters = append(inters, rkechocsrf.Middleware(
 				rkmidcsrf.ToOptions(&element.Middleware.Csrf, element.Name, EchoEntryType)...))
-		}
-
-		// cors middleware
-		if element.Middleware.Cors.Enabled {
-			inters = append(inters, rkechocors.Middleware(
-				rkmidcors.ToOptions(&element.Middleware.Cors, element.Name, EchoEntryType)...))
 		}
 
 		// gzip middleware
@@ -501,7 +502,10 @@ func (entry *EchoEntry) Interrupt(ctx context.Context) {
 	}
 
 	if entry.Echo != nil {
-		if err := entry.Echo.Shutdown(context.Background()); err != nil && err != http.ErrServerClosed {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		if err := entry.Echo.Shutdown(ctx); err != nil && err != http.ErrServerClosed {
 			event.AddErr(err)
 			logger.Warn("Error occurs while stopping echo-server.", event.ListPayloads()...)
 		}
