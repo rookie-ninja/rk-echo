@@ -34,6 +34,11 @@ func TestGetIncomingHeaders(t *testing.T) {
 	assert.Equal(t, "ut-value", GetIncomingHeaders(ctx).Get("ut-key"))
 }
 
+func TestGormCtx(t *testing.T) {
+	ctx := newCtx()
+	assert.NotNil(t, GormCtx(ctx))
+}
+
 func TestAddHeaderToClient(t *testing.T) {
 	defer assertNotPanic(t)
 
