@@ -46,7 +46,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"net/http/pprof"
-	"path/filepath"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -378,7 +378,7 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 			ctx.Redirect(http.StatusTemporaryRedirect, entry.SwEntry.Path)
 			return nil
 		})
-		entry.Echo.GET(filepath.Join(entry.SwEntry.Path, "*"), echo.WrapHandler(entry.SwEntry.ConfigFileHandler()))
+		entry.Echo.GET(path.Join(entry.SwEntry.Path, "*"), echo.WrapHandler(entry.SwEntry.ConfigFileHandler()))
 		entry.SwEntry.Bootstrap(ctx)
 	}
 
@@ -389,7 +389,7 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 			ctx.Redirect(http.StatusTemporaryRedirect, entry.DocsEntry.Path)
 			return nil
 		})
-		entry.Echo.GET(filepath.Join(entry.DocsEntry.Path, "*"), echo.WrapHandler(entry.DocsEntry.ConfigFileHandler()))
+		entry.Echo.GET(path.Join(entry.DocsEntry.Path, "*"), echo.WrapHandler(entry.DocsEntry.ConfigFileHandler()))
 
 		entry.DocsEntry.Bootstrap(ctx)
 	}
@@ -403,7 +403,7 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 		})
 
 		// Register path into Router.
-		entry.Echo.GET(filepath.Join(entry.StaticFileEntry.Path, "*"), echo.WrapHandler(entry.StaticFileEntry.GetFileHandler()))
+		entry.Echo.GET(path.Join(entry.StaticFileEntry.Path, "*"), echo.WrapHandler(entry.StaticFileEntry.GetFileHandler()))
 		entry.StaticFileEntry.Bootstrap(ctx)
 	}
 
@@ -419,16 +419,16 @@ func (entry *EchoEntry) Bootstrap(ctx context.Context) {
 	// Is pprof enabled?
 	if entry.IsPProfEnabled() {
 		entry.Echo.GET(entry.PProfEntry.Path, echo.WrapHandler(http.HandlerFunc(pprof.Index)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "cmdline"), echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "profile"), echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "symbol"), echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "trace"), echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "allocs"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("allocs").ServeHTTP)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "block"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("block").ServeHTTP)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "goroutine"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("goroutine").ServeHTTP)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "heap"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("heap").ServeHTTP)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "mutex"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("mutex").ServeHTTP)))
-		entry.Echo.GET(filepath.Join(entry.PProfEntry.Path, "threadcreate"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("threadcreate").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "cmdline"), echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "profile"), echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "symbol"), echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "trace"), echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "allocs"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("allocs").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "block"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("block").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "goroutine"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("goroutine").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "heap"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("heap").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "mutex"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("mutex").ServeHTTP)))
+		entry.Echo.GET(path.Join(entry.PProfEntry.Path, "threadcreate"), echo.WrapHandler(http.HandlerFunc(pprof.Handler("threadcreate").ServeHTTP)))
 	}
 
 	// Start echo server
